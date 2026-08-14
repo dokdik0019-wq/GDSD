@@ -1,4 +1,4 @@
-# GDSD — Gradient Direction Symmetry Difference Edge Detector
+# GDSD — Gradient-Direction Second Derivative Edge Detector
 
 A second-order edge detection method based on local quadratic surface
 fitting. For every pixel, the intensity surface is approximated by a
@@ -193,7 +193,35 @@ Every push runs the test suite and the demo smoke test on
 Ubuntu, macOS, and Windows with Python 3.10, 3.11, and 3.12
 (`.github/workflows/ci.yml`).
 
+## Citation
+
+If you use this implementation in your work, please cite the paper that
+introduces the GDSD method:
+
+> Sinlapakorn T, Puphasuk P, Wetweerapong J. Edge detection using the
+> gradient-direction second derivative of a local 2D quadratic
+> approximation. Proceedings of the 30th Annual Meeting in Mathematics
+> and Conference in Number Theory and Applications 2026. 2026.
+> pp. 449–458. ISBN 978-616-438-985-4.
+
+BibTeX:
+
+```bibtex
+@inproceedings{sinlapakorn2026gdsd,
+  author    = {Sinlapakorn, Thapakorn and Puphasuk, Pikul and Wetweerapong, Jeerayut},
+  title     = {Edge detection using the gradient-direction second derivative
+               of a local 2D quadratic approximation},
+  booktitle = {Proceedings of the 30th Annual Meeting in Mathematics and
+               Conference in Number Theory and Applications 2026},
+  year      = {2026},
+  pages     = {449--458},
+  isbn      = {978-616-438-985-4}
+}
+```
+
+The method is also described in the author's doctoral thesis,
+Chapter 3, Section 3.2.
+
 ## License
 
-MIT. See `LICENSE`. The method itself is described in the author's
-doctoral thesis, Chapter 3, Section 3.2.
+MIT. See `LICENSE`.

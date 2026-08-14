@@ -1,6 +1,6 @@
 """
-GDSD -- Gradient Direction Symmetry Difference edge detector
-============================================================
+GDSD -- Gradient-Direction Second Derivative edge detector
+==========================================================
 
 Second-order edge detection based on local quadratic surface fitting.
 For every pixel the intensity surface is approximated by a quadratic
@@ -20,7 +20,14 @@ between the two pixels on either side of the current pixel along the
 gradient direction, with an additional percentile contrast constraint
 (one neighbor above Tp while the other is below Tlow).
 
-Reference: doctoral thesis, Chapter 3, Section 3.2 (GDSD edge detector).
+Reference:
+  Sinlapakorn T, Puphasuk P, Wetweerapong J. Edge detection using the
+  gradient-direction second derivative of a local 2D quadratic
+  approximation. Proceedings of the 30th Annual Meeting in Mathematics
+  and Conference in Number Theory and Applications 2026. 2026.
+  pp. 449-458. ISBN 978-616-438-985-4.
+
+  See also: doctoral thesis, Chapter 3, Section 3.2 (GDSD method).
 """
 
 from __future__ import annotations
