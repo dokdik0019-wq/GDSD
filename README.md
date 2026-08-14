@@ -207,6 +207,9 @@ introduces the GDSD method:
 > and Conference in Number Theory and Applications 2026. 2026.
 > pp. 449–458. ISBN 978-616-438-985-4.
 
+Official proceedings (free PDF):
+https://amm2026cna.sc.kku.ac.th/
+
 BibTeX:
 
 ```bibtex
