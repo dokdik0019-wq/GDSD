@@ -12,6 +12,104 @@ constraint.
 This implementation follows the GDSD method as described in the
 author's doctoral thesis, Chapter 3, Section 3.2.
 
+## Quick start
+
+```bash
+git clone <your-repo-url> GDSD
+cd GDSD
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+python demo.py
+pytest tests/ -q
+```
+
+`demo.py` generates a synthetic test image (rectangle, diagonal line,
+circle, text, plus mild noise), runs the detector, and writes the
+results to `output/`:
+
+```
+[OK] GDSD finished in 0.51s on 256x256
+     edge pixels : 1373
+     Tp          : 7.204427
+     Tlow        : -6.991019
+```
+
+Expected result previews are committed under `examples/`:
+
+| File                      | Contents                                |
+|---------------------------|-----------------------------------------|
+| `examples/sample_input.png`    | generated input image             |
+| `examples/sample_edge.png`     | binary edge map (white on black)  |
+| `examples/sample_overlay.png`  | input with detected edges in red  |
+| `examples/sample_response.png` | normalized GDSD response          |
+
+## Requirements
+
+- Python 3.9+ (tested on 3.10-3.12)
+- `numpy` and `opencv-python-headless` (installed automatically by pip)
+
+The project uses `opencv-python-headless`, which provides the full image
+processing API without GUI dependencies, so it works on servers, CI, and
+headless machines. If you need `cv2.imshow`, install `opencv-python`
+instead.
+
+## Installation options
+
+Editable install (recommended for development):
+
+```bash
+pip install -e ".[dev]"
+```
+
+Regular install:
+
+```bash
+pip install .
+```
+
+Either install also provides a `gdsd-demo` command:
+
+```bash
+gdsd-demo                          # run on the generated sample
+gdsd-demo --input photo.jpg        # run on your own image
+gdsd-demo --percentile 95 --sigma 1.0
+```
+
+## Usage
+
+### Command line
+
+```bash
+python demo.py                            # generated sample
+python demo.py --input photo.jpg          # your image
+python demo.py --percentile 95 --sigma 1.0 --gradient-threshold 0.01
+```
+
+Outputs are written to `output/`:
+
+| File                     | Contents                                   |
+|--------------------------|--------------------------------------------|
+| `<name>_edge.png`        | binary edge map (white on black)           |
+| `<name>_overlay.png`     | input image with detected edges in red     |
+| `<name>_response.png`    | normalized GDSD response                   |
+
+### Python API
+
+```python
+import cv2
+from gdsd import detect_edges
+
+image = cv2.imread("photo.jpg")
+result = detect_edges(image)          # defaults: percentile=90, sigma=1.4
+edges = result["edge"]                # boolean map, True on edges
+print(result["Tp"], result["Tlow"])   # the two thresholds used
+```
+
+`detect_edges` returns a dict with keys:
+`gradient_magnitude`, `response`, `valid`, `neighbor_positive`,
+`neighbor_negative`, `percentile_contrast`, `zero_crossing`, `edge`,
+`Tp`, `Tlow`.
+
 ## How it works
 
 1. **Preprocessing** — convert to grayscale and apply a Gaussian blur
@@ -47,66 +145,19 @@ author's doctoral thesis, Chapter 3, Section 3.2.
    an edge if the response changes sign between the neighbors and one
    neighbor is above `Tp` while the other is below `Tlow`.
 
-## Installation
-
-```bash
-git clone <your-repo-url> GDSD
-cd GDSD
-python -m venv .venv && source .venv/bin/activate   # optional but recommended
-pip install -r requirements.txt
-```
-
-Requires Python 3.9+ with `numpy` and `opencv-python`.
-
-## Usage
-
-### Command line demo
-
-```bash
-# Run on a generated synthetic sample (rectangle, line, circle, text + noise)
-python demo.py
-
-# Run on your own image
-python demo.py --input photo.jpg
-
-# Tune parameters
-python demo.py --percentile 95 --sigma 1.0 --gradient-threshold 0.01
-```
-
-Outputs are written to `output/`:
-
-| File                     | Contents                                   |
-|--------------------------|--------------------------------------------|
-| `<name>_edge.png`        | binary edge map (white on black)           |
-| `<name>_overlay.png`     | input image with detected edges in red     |
-| `<name>_response.png`    | normalized GDSD response                   |
-
-### Python API
-
-```python
-import cv2
-from gdsd import detect_edges
-
-image = cv2.imread("photo.jpg")
-result = detect_edges(image)          # defaults: percentile=90, sigma=1.4
-edges = result["edge"]                # boolean map, True on edges
-print(result["Tp"], result["Tlow"])   # the two thresholds used
-```
-
-`detect_edges` returns a dict with keys:
-`gradient_magnitude`, `response`, `valid`, `neighbor_positive`,
-`neighbor_negative`, `percentile_contrast`, `zero_crossing`, `edge`,
-`Tp`, `Tlow`.
-
 ## Tests
 
 ```bash
 pytest tests/ -q
 ```
 
-The test suite covers: edge detection on synthetic shapes, empty
-output on flat images, threshold validation, output shapes, and
-reproducibility.
+The suite covers edge detection on synthetic shapes, empty output on
+flat images, threshold validation, output shapes, and reproducibility.
+
+`tests/verify_thesis_table44.py` reproduces the benchmark protocol of
+the thesis (radial square pattern, one-pixel tolerance, precision /
+recall / F-measure). It needs the thesis test assets on your machine;
+without them it prints instructions and exits.
 
 ## Project structure
 
@@ -115,8 +166,14 @@ GDSD/
 |-- gdsd.py            core implementation (fit, response, detection)
 |-- demo.py            command-line demo + result visualization
 |-- tests/
-|   `-- test_gdsd.py   pytest suite
+|   |-- test_gdsd.py               pytest suite
+|   `-- verify_thesis_table44.py   thesis benchmark verification
+|-- examples/          expected demo outputs (committed)
+|-- .github/workflows/ci.yml  CI: tests on 3 OS x Python 3.10-3.12
+|-- pyproject.toml     package metadata + `gdsd-demo` entry point
 |-- requirements.txt
+|-- Makefile           setup / demo / test / clean
+|-- LICENSE            MIT
 |-- README.md
 `-- .gitignore
 ```
@@ -130,7 +187,13 @@ GDSD/
 | `gradient_threshold` | 0.01    | minimum gradient magnitude to consider a pixel   |
 | `radius`             | 2       | fit window radius (2 = 5x5)                      |
 
+## Continuous integration
+
+Every push runs the test suite and the demo smoke test on
+Ubuntu, macOS, and Windows with Python 3.10, 3.11, and 3.12
+(`.github/workflows/ci.yml`).
+
 ## License
 
-Academic use. See the thesis for the full method description and
-derivation.
+MIT. See `LICENSE`. The method itself is described in the author's
+doctoral thesis, Chapter 3, Section 3.2.
