@@ -1,5 +1,7 @@
 # GDSD — Gradient-Direction Second Derivative Edge Detector
 
+[![CI](https://github.com/dokdik0019-wq/GDSD/actions/workflows/ci.yml/badge.svg)](https://github.com/dokdik0019-wq/GDSD/actions/workflows/ci.yml)
+
 A second-order edge detection method based on local quadratic surface
 fitting. For every pixel, the intensity surface is approximated by a
 quadratic polynomial fitted with least squares on a 5x5 neighborhood.
