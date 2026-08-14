@@ -16,6 +16,10 @@ Reproduces the thesis evaluation protocol on the radial square pattern:
 The thesis reports, at its best operating point (pct-54):
   precision 0.9040, recall 1.0000, F-measure 0.9496, 25004 detected px.
 
+The same numbers are reported in the AMM 2026 paper (Sinlapakorn,
+Puphasuk, Wetweerapong), Section 5.2 / Table 1: GDSD best = pct-54,
+F = 0.9496; LoG best = pct-8, F = 0.9115.
+
 This script needs the thesis test assets. If they are not found, it
 prints instructions and exits.
 

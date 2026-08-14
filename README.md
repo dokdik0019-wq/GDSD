@@ -156,10 +156,11 @@ pytest tests/ -q
 The suite covers edge detection on synthetic shapes, empty output on
 flat images, threshold validation, output shapes, and reproducibility.
 
-`tests/verify_thesis_table44.py` reproduces the benchmark protocol of
-the thesis (radial square pattern, one-pixel tolerance, precision /
-recall / F-measure). It needs the thesis test assets on your machine;
-without them it prints instructions and exits.
+`tests/verify_thesis_table44.py` reproduces the quantitative benchmark
+of the AMM 2026 paper (Section 5.2) and the thesis (Table 4.4): radial
+square pattern, one-pixel tolerance, precision / recall / F-measure.
+It needs the thesis test assets on your machine; without them it prints
+instructions and exits.
 
 ## Project structure
 
