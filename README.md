@@ -147,6 +147,32 @@ print(result["Tp"], result["Tlow"])   # the two thresholds used
    an edge if the response changes sign between the neighbors and one
    neighbor is above `Tp` while the other is below `Tlow`.
 
+## Native C++ implementation
+
+A native C++ implementation of the same algorithm lives in `src/cpp/`.
+It matches the Python output **pixel-for-pixel** (verified by a
+differential test over all 500 BSDS500 images) and is ~50x faster
+per image on a single core (~0.06 s vs ~3.5 s on 481x321).
+
+```bash
+# requires OpenCV dev headers (Ubuntu: sudo apt install libopencv-dev)
+make build-cpp        # -> src/cpp/build/gdsd_cli
+
+# run on one image: ./gdsd_cli <in.jpg> <out.png> [percentile] [sigma]
+./src/cpp/build/gdsd_cli input.jpg edges.png 90 1.4
+
+# differential test: C++ output must equal Python exactly
+make test-cpp
+```
+
+Key notes:
+
+- The Gaussian blur uses `cv::GaussianBlur` (the same primitive as the
+  Python version) — this is what makes the outputs bit-identical.
+- `-march=native` in `CXXFLAGS` ties the binary to the build CPU; drop
+  it when distributing prebuilt binaries.
+- `OMP_NUM_THREADS=1` forces single-threaded execution.
+
 ## Tests
 
 ```bash
@@ -168,6 +194,11 @@ instructions and exits.
 GDSD/
 |-- gdsd.py            core implementation (fit, response, detection)
 |-- demo.py            command-line demo + result visualization
+|-- src/cpp/
+|   |-- gdsd_cpp.hpp              native C++ core (same algorithm)
+|   |-- gdsd_cli.cpp              CLI: image in -> edge map out
+|   |-- diff_test.py              differential test vs Python (needs BSDS data)
+|   `-- verify_cpp_vs_python.py   verify all 500 BSDS edge maps match
 |-- tests/
 |   |-- test_gdsd.py               pytest suite
 |   `-- verify_thesis_table44.py   thesis benchmark verification
@@ -175,7 +206,7 @@ GDSD/
 |-- .github/workflows/ci.yml  CI: tests on 3 OS x Python 3.10-3.12
 |-- pyproject.toml     package metadata + `gdsd-demo` entry point
 |-- requirements.txt
-|-- Makefile           setup / demo / test / clean
+|-- Makefile           setup / demo / test / clean / build-cpp / test-cpp
 |-- LICENSE            MIT
 |-- README.md
 `-- .gitignore
