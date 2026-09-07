@@ -52,25 +52,28 @@ Soft edge map definitions (what the paper/README call v1 and v2):
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6174** | **0.5762** |
-| GDSD v2 (gm@ZC, σ=2.8) | 0.5917 | 0.6175 | 0.5762 |
-| Canny (NMS soft map, σ=1.4) | 0.5741 | 0.6008 | 0.5523 |
-| **GDSD v1 (\|R\|@ZC, σ=1.4)** | **0.5743** | **0.6031** | **0.5462** |
-| Haralick facet (1984, cubic) | 0.5196 | 0.5523 | 0.4668 |
+| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6176** | **0.4949** |
+| GDSD v2 (gm@ZC, σ=2.8) | 0.5918 | 0.6176 | 0.4949 |
+| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5743 | 0.6014 | 0.3142 |
+| Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
+| Haralick facet (1984, cubic) | 0.5194 | 0.5513 | 0.4708 |
 
 val split (100 images), for completeness:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| GDSD v2 σ=1.4 | 0.5680 | 0.6175 | 0.5618 |
-| GDSD v2 σ=2.8 | 0.5724 | 0.6207 | 0.5691 |
-| Canny | 0.5584 | 0.6046 | 0.5464 |
-| **GDSD v1 (\|R\|@ZC)** | **0.5568** | **0.6084** | **0.5407** |
-| Haralick | 0.4994 | 0.5516 | 0.4539 |
+| GDSD v2 σ=1.4 | 0.5680 | 0.6177 | 0.4428 |
+| GDSD v2 σ=2.8 | 0.5723 | 0.6207 | 0.4799 |
+| Canny | 0.5584 | 0.6044 | 0.4675 |
+| **GDSD v1 (\|R\|@ZC)** | 0.5565 | 0.6069 | 0.3069 |
+| Haralick | 0.4996 | 0.5507 | 0.4638 |
 
 Note: σ=1.4 and σ=2.8 give the same test numbers because the official
-evaluation thresholds each soft map over a global grid; the σ sweep on
-`val` preferred 2.8 by a small margin.
+evaluation thresholds each soft map over the same global grid; the σ
+sweep on `val` preferred 2.8 by a small margin.  AP values follow the
+official definition (area under the real PR curve, interpolated over
+recall) — classical detectors have low AP by nature, which is why AP is
+rarely the headline metric for them.
 
 ## Internal protocol (thesis Table 4.4 / AMM 2026 §5.2)
 
