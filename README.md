@@ -14,6 +14,39 @@ constraint.
 This implementation follows the GDSD method as described in the
 author's doctoral thesis, Chapter 3, Section 3.2.
 
+## BSDS500 results (official protocol)
+
+The detector is evaluated on BSDS500 with the **official BSDS benchmark**
+(py-bsds500: CSA matching, thinning, global thresholds).  Full details and
+reproduction steps are in [`docs/BENCHMARK.md`](docs/BENCHMARK.md) and
+[`benchmark/`](benchmark/).
+
+Test split (200 images), ODS / OIS / AP:
+
+| Method | ODS | OIS | AP |
+|---|---|---|---|
+| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6174** | **0.5762** |
+| GDSD v2 (gm@ZC, σ=2.8) | 0.5917 | 0.6175 | 0.5762 |
+| **GDSD v1 (\|R\|@ZC, σ=1.4)** | **0.5743** | **0.6031** | **0.5462** |
+| Canny (NMS soft map, σ=1.4) | 0.5741 | 0.6008 | 0.5523 |
+| Haralick facet (1984) | 0.5196 | 0.5523 | 0.4668 |
+
+val split (100 images), ODS / OIS / AP:
+
+| Method | ODS | OIS | AP |
+|---|---|---|---|
+| GDSD v2 σ=1.4 | 0.5680 | 0.6175 | 0.5618 |
+| GDSD v2 σ=2.8 | 0.5724 | 0.6207 | 0.5691 |
+| Canny | 0.5584 | 0.6046 | 0.5464 |
+| **GDSD v1 (\|R\|@ZC)** | **0.5568** | **0.6084** | **0.5407** |
+| Haralick | 0.4994 | 0.5516 | 0.4539 |
+
+The "v1" variant (soft map strength = `|R|` at the zero crossing) is the
+original AMM 2026 soft map; v2 uses `gm` instead — the binary detector is
+unchanged, only the soft-map ranking differs.  v2 lifts GDSD clearly
+above Canny on the official benchmark (+0.018 ODS test, +0.030 AP test),
+while v1 sits at Canny's level.
+
 ## Quick start
 
 ```bash
@@ -112,6 +145,22 @@ print(result["Tp"], result["Tlow"])   # the two thresholds used
 `neighbor_negative`, `percentile_contrast`, `zero_crossing`, `edge`,
 `Tp`, `Tlow`.
 
+### Soft edge map (benchmark / PR curves)
+
+For ODS/OIS/AP evaluation the detector exposes a real-valued *soft* map
+(the binary `edge` output is 0/1 and not suitable for threshold curves):
+
+```python
+from gdsd import soft_edge_map
+
+soft_v1 = soft_edge_map(image, strength="response")            # |R| @ ZC (original)
+soft_v2 = soft_edge_map(image, strength="gradient_magnitude")  # gm @ ZC (v2, default)
+```
+
+Both variants share the same zero-crossing support; they differ only in
+the strength assigned to each crossing pixel.  The v2 map is the one
+reported in the BSDS500 table above.
+
 ## How it works
 
 1. **Preprocessing** — convert to grayscale and apply a Gaussian blur
@@ -192,13 +241,21 @@ instructions and exits.
 
 ```
 GDSD/
-|-- gdsd.py            core implementation (fit, response, detection)
+|-- gdsd.py            core implementation (fit, response, detection, soft map)
 |-- demo.py            command-line demo + result visualization
 |-- src/cpp/
 |   |-- gdsd_cpp.hpp              native C++ core (same algorithm)
 |   |-- gdsd_cli.cpp              CLI: image in -> edge map out
 |   |-- diff_test.py              differential test vs Python (needs BSDS data)
 |   `-- verify_cpp_vs_python.py   verify all 500 BSDS edge maps match
+|-- benchmark/
+|   |-- gdsd_cpp.hpp              C++ core for the feature extractor
+|   |-- gdsd_features_cli.cpp     C++ feature extractor (.response/.d/.e/.zc.f64)
+|   |-- make_soft.py              build GDSD soft maps from features (v1/v2)
+|   |-- bsds_official_eval.py     official BSDS500 evaluation (py-bsds500)
+|   `-- README.md                 benchmark reproduction steps
+|-- docs/
+|   `-- BENCHMARK.md              protocol description + full results
 |-- tests/
 |   |-- test_gdsd.py               pytest suite
 |   `-- verify_thesis_table44.py   thesis benchmark verification
@@ -206,7 +263,7 @@ GDSD/
 |-- .github/workflows/ci.yml  CI: tests on 3 OS x Python 3.10-3.12
 |-- pyproject.toml     package metadata + `gdsd-demo` entry point
 |-- requirements.txt
-|-- Makefile           setup / demo / test / clean / build-cpp / test-cpp
+|-- Makefile           setup / demo / test / clean / build-cpp / test-cpp / build-benchmark
 |-- LICENSE            MIT
 |-- README.md
 `-- .gitignore

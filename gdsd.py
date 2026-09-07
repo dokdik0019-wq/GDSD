@@ -42,6 +42,7 @@ __all__ = [
     "detect_edges",
     "fit_quadratic_maps",
     "make_demo_image",
+    "soft_edge_map",
     "to_gray_float",
 ]
 
@@ -221,6 +222,69 @@ def detect_edges(
         "Tp": np.array(tp, dtype=np.float64),
         "Tlow": np.array(tlow, dtype=np.float64),
     }
+
+
+def soft_edge_map(
+    image: np.ndarray,
+    percentile: float = 90.0,
+    sigma: float = 1.4,
+    gradient_threshold: float = 1e-2,
+    radius: int = 2,
+    step: float = 0.1,
+    strength: str = "gradient_magnitude",
+) -> np.ndarray:
+    """Build a GDSD *soft* edge map for threshold-based benchmark evaluation.
+
+    The binary ``detect_edges`` map is not suitable for computing ODS/OIS/AP
+    curves because it applies a percentile contrast constraint and produces a
+    0/1 mask.  The official BSDS benchmark thresholds a real-valued *soft*
+    map over many global thresholds instead.  This function returns the soft
+    map whose nonzero pixels are the GDSD zero crossings, with the strength
+    at each crossing chosen by ``strength``:
+
+    - ``\"response\"`` (GDSD v1, as in the AMM 2026 paper / thesis): the
+      absolute response ``|R|`` at the zero-crossing pixel.  This matches the
+      original soft map ``soft = |R| where zc``.
+    - ``\"gradient_magnitude\"`` (GDSD v2): the gradient magnitude
+      ``gm = hypot(d, e)`` at the zero-crossing pixel.  v2 is the variant
+      reported in ``docs/BENCHMARK.md``.
+
+    All other parameters are identical to ``detect_edges``.
+
+    Returns:
+        Float32 array of the same shape as the input grayscale image.
+        Zero crossings carry their chosen strength; all other pixels are 0.
+    """
+    if strength not in ("response", "gradient_magnitude"):
+        raise ValueError("strength must be 'response' (v1) or 'gradient_magnitude' (v2)")
+
+    gray = to_gray_float(image)
+    gray = gaussian_blur(gray, sigma)
+    a, b, c, d, e, _ = fit_quadratic_maps(gray, radius=radius, step=step)
+
+    gradient_magnitude = np.hypot(d, e)
+    valid = gradient_magnitude > gradient_threshold
+    response = 2.0 * a * d * d + 2.0 * c * d * e + 2.0 * b * e * e
+
+    h, w = gray.shape
+    zero_crossing = np.zeros((h, w), dtype=bool)
+    for y in range(h):
+        for x in range(w):
+            if not valid[y, x]:
+                continue
+            step_y, step_x = quantized_gradient_direction(d[y, x], e[y, x])
+            if step_y == 0 and step_x == 0:
+                continue
+            y1 = int(np.clip(y + step_y, 0, h - 1))
+            x1 = int(np.clip(x + step_x, 0, w - 1))
+            y2 = int(np.clip(y - step_y, 0, h - 1))
+            x2 = int(np.clip(x - step_x, 0, w - 1))
+            if response[y1, x1] * response[y2, x2] < 0.0:
+                zero_crossing[y, x] = True
+
+    strength_map = np.abs(response) if strength == "response" else gradient_magnitude
+    soft = np.where(zero_crossing, strength_map, 0.0).astype(np.float32)
+    return soft
 
 
 def make_demo_image(size: int = 256, seed: int = 0) -> np.ndarray:

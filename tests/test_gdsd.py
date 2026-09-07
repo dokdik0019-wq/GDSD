@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from gdsd import detect_edges, fit_quadratic_maps, make_demo_image
+from gdsd import detect_edges, fit_quadratic_maps, make_demo_image, soft_edge_map
 
 
 def test_demo_image_has_shapes():
@@ -58,6 +58,34 @@ def test_reproducible():
     r1 = detect_edges(img)
     r2 = detect_edges(img)
     assert np.array_equal(r1["edge"], r2["edge"])
+
+
+def test_soft_edge_map_shapes_and_masks():
+    img = make_demo_image()
+    s1 = soft_edge_map(img, strength="response")
+    s2 = soft_edge_map(img, strength="gradient_magnitude")
+    assert s1.shape == img.shape and s1.dtype == np.float32
+    assert s2.shape == img.shape and s2.dtype == np.float32
+    # same zero-crossing support; differ only in strength
+    assert np.array_equal(s1 > 0, s2 > 0)
+    assert (s1 > 0).sum() > 0
+    # every soft zero crossing carries a nonzero strength
+    assert (s1[s1 > 0] > 0).all()
+
+
+def test_soft_edge_map_strength_choice():
+    img = make_demo_image()
+    s1 = soft_edge_map(img, strength="response")
+    s2 = soft_edge_map(img, strength="gradient_magnitude")
+    # strengths genuinely differ (not accidentally identical)
+    nz = s1 > 0
+    assert not np.allclose(s1[nz], s2[nz])
+
+
+def test_soft_edge_map_invalid_strength():
+    img = make_demo_image()
+    with pytest.raises(ValueError):
+        soft_edge_map(img, strength="bogus")
 
 
 def test_quadratic_fit_on_plane():

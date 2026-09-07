@@ -6,7 +6,12 @@ CXXFLAGS ?= -O3 -march=native -fopenmp -std=c++17
 OPENCV_CFLAGS := $(shell pkg-config --cflags opencv4 2>/dev/null)
 OPENCV_LIBS := $(shell pkg-config --libs opencv4 2>/dev/null || echo "-lopencv_core -lopencv_imgcodecs -lopencv_imgproc")
 
-.PHONY: setup demo test clean build-cpp test-cpp
+.PHONY: setup demo test clean build-cpp test-cpp build-benchmark
+
+build-benchmark:  ## Build the C++ benchmark feature extractor (benchmark/)
+	mkdir -p benchmark/build
+	$(CXX) $(CXXFLAGS) $(OPENCV_CFLAGS) -I src/cpp benchmark/gdsd_features_cli.cpp \
+		-o benchmark/build/gdsd_features_cli $(OPENCV_LIBS)
 
 setup:            ## Install the package in editable mode with dev tools
 	$(PYTHON) -m pip install -e ".[dev]"
