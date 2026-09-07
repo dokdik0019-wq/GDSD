@@ -11,7 +11,9 @@ ground-truth matching, morphological thinning, global thresholds).
 |---|---|
 | `gdsd_features_cli.cpp` | C++ feature extractor (uses `../src/cpp/gdsd_cpp.hpp` core); writes `.response/.d/.e/.zc.f64` per image |
 | `make_soft.py` | Builds the GDSD soft edge map from features (`--strength response` = v1, `gradient_magnitude` = v2) |
-| `bsds_official_eval.py` | Runs the official evaluation for one method/split |
+| `make_soft_pngs_official.py` | Normalizes soft maps to 16-bit PNG by **global max** (official [0,1] scale) |
+| `run_official_pr.py` | Runs the official py-bsds500 `pr_evaluation` pipeline (global linspace thresholds, interp AP) on soft-map PNGs |
+| `bsds_official_eval.py` | *(legacy)* percentile-threshold variant; kept for reference |
 
 ## Prerequisites (not vendored)
 
@@ -41,12 +43,32 @@ done
 python benchmark/make_soft.py feats/test soft/gdsd1/test test --strength response
 python benchmark/make_soft.py feats/test soft/gdsd2/test test --strength gradient_magnitude
 
-# 4. run official evaluation (99 global thresholds)
-GDSD_SOFT_ROOT=soft python benchmark/bsds_official_eval.py gdsd2 test 99
+# 4. convert to official 16-bit PNGs (normalized by GLOBAL MAX of the method)
+python benchmark/make_soft_pngs_official.py soft/gdsd1/test soft_png/gdsd1/test
+python benchmark/make_soft_pngs_official.py soft/gdsd2/test soft_png/gdsd2/test
+
+# 5. run official pr_evaluation (global linspace thresholds over [0,1], 99 thr)
+GDSD_BSDS_ROOT=. GDSD_PYBSDS_PATH=./py-bsds500 \
+  python benchmark/run_official_pr.py gdsd2 test soft_png/gdsd2/test 99
 ```
 
 Each method/split takes roughly 1 h (val) to 2.5 h (test) on a 12-core
-machine.
+machine.  Run several methods in sequence with a wrapper script, or
+parallelize the `run_official_pr.py` invocations (each uses 10 workers).
+
+## Official protocol notes
+
+The reported numbers use the **official BSDS evaluation pipeline**
+(py-bsds500 `pr_evaluation`), which mirrors the MATLAB suite:
+
+- soft maps stored as 16-bit PNG, normalized by each method's own global
+  maximum across the split (so all methods share the [0,1] scale);
+- a **fixed global threshold grid** `linspace(1/(N+1), 1-1/(N+1), N)` over
+  [0,1] — not per-method percentiles;
+- ODS = best F1 from counts accumulated over all images at the shared grid;
+- OIS = mean of per-image best F1;
+- AP = area under the precision-recall curve, interpolated over recall in
+  0.01 steps (as in the official suite).
 
 ## Soft map definitions
 

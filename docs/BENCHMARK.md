@@ -12,8 +12,16 @@ evaluation), which is the only one comparable with the literature.
 - Matching: `correspond_pixels` (C++ CSA implementation from
   py-bsds500), `max_dist = 0.0075` (fraction of image diagonal),
   morphological **thinning applied** to every thresholded edge map.
-- Thresholds: 99 global thresholds per method; ODS/OIS/AP are computed
-  from the accumulated counts, exactly as in the official BSDS suite.
+- Soft maps: uint8 PNG (255 × raw value, clipped) — loaded by the official
+  pipeline as `imread/255`, so every image occupies its natural [0,1]
+  scale (this is the convention used for classical edge detectors).
+- Thresholds: a fixed global grid
+  `linspace(1/(N+1), 1-1/(N+1), N)` over [0,1] with N=99, applied to
+  every image of every method (not per-method percentiles).
+- ODS = best F1 from counts accumulated over all images at the shared
+  grid; OIS = mean of per-image best F1; AP = area under the
+  precision-recall curve interpolated over recall in 0.01 steps —
+  exactly the official BSDS suite definition.
 - Runtime: roughly 1 h (val) to 2.5 h (test) per method on a 12-core
   machine.
 
@@ -23,8 +31,10 @@ on the research box (`~/gdsd-bsds/`):
 | Script | Purpose |
 |---|---|
 | `benchmark/gdsd_features_cli.cpp` | C++ feature extraction (response, gradient, zero-crossing) — output `.f64` files |
-| `benchmark/make_soft.py` | builds the GDSD soft edge map from features |
-| `benchmark/bsds_official_eval.py` | runs the official evaluation for one method/split |
+| `benchmark/make_soft.py` | builds the GDSD soft edge map from features (`--strength response` = v1, `gradient_magnitude` = v2) |
+| `benchmark/make_soft_pngs_u8.py` | converts soft maps to uint8 PNG (×255, clip) — the official `imread/255` convention |
+| `benchmark/run_official_pr.py` | runs the official `pr_evaluation` pipeline (PNG soft maps, global linspace thresholds, interp AP) |
+| `benchmark/bsds_official_eval.py` | *(legacy)* earlier percentile-threshold variant; kept for reference — not the numbers in the tables |
 
 Soft edge map definitions (what the paper/README call v1 and v2):
 
@@ -75,7 +85,11 @@ with the BSDS500 numbers above.
 ```bash
 # 1. features (C++) — needs OpenCV dev headers
 make build-cpp
-# 2. soft maps + official evaluation — needs py-bsds500 + BSDS500 data
-python benchmark/make_soft.py ...   # see script usage
-python benchmark/bsds_official_eval.py gdsd2 val 99
+# 2. soft maps (v1 |R|@ZC  OR  v2 gm@ZC) + official PNGs + pr_evaluation
+python benchmark/make_soft.py feats/test soft/gdsd1/test test --strength response
+python benchmark/make_soft_pngs_official.py soft/gdsd1/test soft_png/gdsd1/test
+GDSD_BSDS_ROOT=. GDSD_PYBSDS_PATH=./py-bsds500 \
+  python benchmark/run_official_pr.py gdsd1 test soft_png/gdsd1/test 99
 ```
+
+See `benchmark/README.md` for the full workflow.
