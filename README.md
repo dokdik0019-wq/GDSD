@@ -21,15 +21,17 @@ The detector is evaluated on BSDS500 with the **official BSDS benchmark**
 reproduction steps are in [`docs/BENCHMARK.md`](docs/BENCHMARK.md) and
 [`benchmark/`](benchmark/).
 
-Test split (200 images), ODS / OIS / AP:
+Test split (200 images), ODS / OIS / AP — **σ-fix numbers** (Gaussian kernel
+auto-sized from σ, see [`docs/GDSD_V2.md`](docs/GDSD_V2.md) §Kernel):
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6176** | **0.4949** |
-| GDSD v2 (gm@ZC, σ=2.8) | 0.5918 | 0.6176 | 0.4949 |
-| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5743 | 0.6014 | 0.3142 |
+| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** |
+| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
+| GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
-| Haralick facet (1984) | 0.5194 | 0.5513 | 0.4708 |
+| Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 |
 | ELSE (NMS, double) † | 0.5143 | 0.5543 | 0.4711 |
 | ELSE (R, single) † | 0.5118 | 0.5592 | 0.4617 |
 | Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 |
@@ -42,23 +44,28 @@ val split (100 images), ODS / OIS / AP:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| GDSD v2 σ=2.8 | 0.5723 | 0.6207 | 0.4799 |
-| GDSD v2 σ=1.4 | 0.5680 | 0.6177 | 0.4428 |
+| **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
+| Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
+| GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
+| GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
-| GDSD v1 (\|R\|@ZC) | 0.5565 | 0.6069 | 0.3069 |
 | ELSE (NMS, double) † | 0.5099 | 0.5602 | 0.4853 |
 | ELSE (R, single) † | 0.5071 | 0.5647 | 0.4784 |
-| Haralick | 0.4996 | 0.5507 | 0.4638 |
+| Haralick (1984, ρ≤1, no blur) | 0.4996 | 0.5507 | 0.4638 |
 | Sobel | 0.4938 | 0.5457 | 0.1555 |
 
 † per-image normalized — same note as under the test table above.
 
 The "v1" variant (soft map strength = `|R|` at the zero crossing) is the
 original AMM 2026 soft map; v2 uses `gm` instead — the binary detector is
-unchanged, only the soft-map ranking differs.  v2 lifts GDSD clearly
-above Canny on the official benchmark (+0.018 ODS test, +0.008 AP test),
-while v1 sits at Canny's level on ODS (its low AP is the area under the
-real PR curve; classical detectors have low AP by nature).
+unchanged, only the soft-map ranking differs.  After the kernel-size fix
+(2026-09-08, commit `ca2ad97`), σ=2.8 is the best single scale for GDSD v2
+(and for the Haralick baseline it is compared against).  v2 σ2.8 lifts GDSD
+clearly above every baseline on the official benchmark (+0.033 ODS test over
+the untuned Haralick of the 1984 paper, +0.009 over the same Haralick tuned
+on val to ρ=2.0/σ=2.8).  Haralick's sensitivity to ρ/σ is documented in
+[`docs/BENCHMARK.md`](docs/BENCHMARK.md) — the untuned row is not a straw man:
+the tuned row shows the comparison survives fair tuning.
 
 A full description of the v2 soft map — why `gm@ZC` replaces `|R|@ZC`,
 the doublet diagnosis behind it, and its lineage — is in

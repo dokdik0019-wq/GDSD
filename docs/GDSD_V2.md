@@ -102,37 +102,46 @@ readers can judge the risk of selection bias themselves.
 
 | | val (held-out) ODS | test ODS |
 |---|---|---|
-| GDSD v2 (gm@ZC) | 0.5680 | 0.5917 |
-| GDSD v1 (\|R\|@ZC) | 0.5565 | 0.5743 |
-| Δ (v2 − v1) | **+0.0115** | +0.0174 |
+| GDSD v2 (gm@ZC) | 0.5724 | 0.5913 |
+| GDSD v1 (|R|@ZC) | 0.5614 | 0.5794 |
+| Δ (v2 − v1) | **+0.0110** | +0.0119 |
 
   The improvement direction is consistent on the split that was never
   inspected, which weakens (but does not remove) the selection-bias
   concern.  A fully clean protocol would pre-register `gm@ZC` and report
-  test once; the numbers above should be read with that caveat.
+  test once; the numbers above should be read with that caveat.  (These
+  are the post-kernel-fix numbers at σ=1.4; see `docs/BENCHMARK.md`.)
 
   In short: **we hypothesized gm@ZC from the doublet theory, then
-  confirmed on held-out val (0.5680) and test (0.5917).**
+  confirmed on held-out val (0.5724) and test (0.5913).**
 
 - **What was *not* tuned on test.**  No parameter (σ, percentile, gate,
-  thresholds) was selected by maximizing a test metric.  σ=1.4 vs 2.8
-  give essentially identical test results, and the evaluation threshold
-  grid is fixed a priori by the official protocol.
+  thresholds) was selected by maximizing a test metric.  The evaluation
+  threshold grid is fixed a priori by the official protocol.  The scale
+  comparison below is val-driven and reported with test numbers only
+  after the val choice was frozen.
 
 ## Effect on the official benchmark (BSDS500, py-bsds500)
 
+Post kernel-fix numbers (2026-09-08); σ=2.8 is the best single scale on
+both splits.
+
 | Method (test, 200 images) | ODS | OIS | AP |
 |---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6176** | **0.4949** |
-| GDSD v1 (|R|@ZC, σ=1.4) | 0.5743 | 0.6014 | 0.3142 |
+| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** |
+| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
+| GDSD v1 (|R|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 |
 | Canny (NMS soft map) | 0.5740 | 0.6008 | 0.4866 |
-| Haralick facet (1984) | 0.5194 | 0.5513 | 0.4708 |
+| Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 |
 
-- **ODS +0.017** and **AP +0.18** over v1 on test (ΔODS +0.012 on val).
+- **ODS +0.016** over v1 (same σ=1.4) on test; at σ=2.8, +0.028 over v1.
 - With v1, GDSD sits at the same ODS level as Canny; with v2 it is
-  clearly above Canny (+0.018 ODS test) and far above Haralick.
-- σ = 1.4 and σ = 2.8 give essentially identical test numbers under the
-  global-threshold protocol (val slightly prefers 2.8).
+  clearly above Canny (+0.033 ODS test at σ2.8) and above a *tuned*
+  Haralick (+0.009 test), not just the untuned 1984 configuration.
+- After the Gaussian kernel-size fix, σ no longer saturates: σ=1.4 and
+  σ=2.8 give genuinely different soft maps, and val prefers σ=2.8
+  (0.5881 vs 0.5724 ODS).
 
 ## Provenance and lineage
 

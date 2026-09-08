@@ -50,13 +50,21 @@ Soft edge map definitions (what the paper/README call v1 and v2):
 
 ## Results (official protocol, test split, 200 images)
 
+**σ-fix numbers (2026-09-08, commit `ca2ad97`).**  An earlier kernel bug
+pinned the Gaussian to 5×5, so σ values ≥ ~1.4 were never reached (measured
+effective σ: set 1.4 → 1.16, set 2.8 → 1.35).  After the fix the kernel
+size is auto-derived from σ.  All numbers below are the *fixed* protocol;
+the old README rows (σ1.4 = σ2.8 = 0.5917) were an artefact of that bug and
+are void.
+
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6176** | **0.4949** |
-| GDSD v2 (gm@ZC, σ=2.8) | 0.5918 | 0.6176 | 0.4949 |
-| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5743 | 0.6014 | 0.3142 |
+| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** |
+| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
+| **GDSD v1 (|R|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
-| Haralick facet (1984, cubic) | 0.5194 | 0.5513 | 0.4708 |
+| Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 |
 | ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 |
 | ELSE (R, single) | 0.5118 | 0.5592 | 0.4617 |
 | Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 |
@@ -65,21 +73,119 @@ val split (100 images), for completeness:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| GDSD v2 σ=2.8 | 0.5723 | 0.6207 | 0.4799 |
-| GDSD v2 σ=1.4 | 0.5680 | 0.6177 | 0.4428 |
+| **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
+| Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
+| GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
+| **GDSD v1 (|R|@ZC, σ=1.4)** | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
-| **GDSD v1 (\|R\|@ZC)** | 0.5565 | 0.6069 | 0.3069 |
 | ELSE (NMS, double) | 0.5099 | 0.5602 | 0.4853 |
 | ELSE (R, single) | 0.5071 | 0.5647 | 0.4784 |
-| Haralick | 0.4996 | 0.5507 | 0.4638 |
+| Haralick (1984, ρ≤1, no blur) | 0.4996 | 0.5507 | 0.4638 |
 | Sobel | 0.4938 | 0.5457 | 0.1555 |
 
-Note: σ=1.4 and σ=2.8 give the same test numbers because the official
-evaluation thresholds each soft map over the same global grid; the σ
-sweep on `val` preferred 2.8 by a small margin.  AP values follow the
-official definition (area under the real PR curve, interpolated over
-recall) — classical detectors have low AP by nature, which is why AP is
-rarely the headline metric for them.
+AP values follow the official definition (area under the real PR curve,
+interpolated over recall) — classical detectors have low AP by nature,
+which is why AP is rarely the headline metric for them.
+
+## Kernel-size fix (2026-09-08, commit `ca2ad97`)
+
+`gdsd.py` and `src/cpp/gdsd_cpp.hpp` pinned the Gaussian blur kernel to 5×5:
+
+```python
+cv2.GaussianBlur(image, (5, 5), sigmaX=sigma, ...)
+```
+
+A 5×5 window cannot represent a wide Gaussian: the achievable second moment
+saturates near σ ≈ 1.38.  Measured effective σ (second moment of a blurred
+delta):
+
+| σ requested | effective with (5,5) | effective with auto kernel |
+|---|---|---|
+| 1.0 | 0.96 | 1.00 |
+| 1.4 | 1.16 | 1.40 |
+| 2.0 | 1.29 | 2.00 |
+| 2.8 | 1.35 | 2.80 |
+| 4.0 | 1.38 | 4.00 |
+
+This is why pre-fix σ=1.4 and σ=2.8 rows were identical — the code could not
+actually set σ=2.8.  The fix replaces the fixed size with `ksize=(0,0)` /
+`cv::Size(0,0)`, letting OpenCV derive the kernel from σ.  Python/C++ parity
+was re-verified (bit-identical on a BSDS image, maxdiff 0.0).  A regression
+test (`test_sigma_kernel_not_saturated`) pins the behaviour.
+
+Scale now has a real effect and σ=2.8 is the best single scale for GDSD v2
+on both splits (val 0.5881 vs 0.5724 at σ=1.4; test 0.6070 vs 0.5913).
+This matches the sensitivity the internal pipeline found (σ=2.8 favoured on
+val); the reviewer's note that the loose scale knob was costing GDSD points
+turned out to be correct.
+
+## Haralick sensitivity (ρ/σ sweep, official protocol, val split)
+
+Haralick (1984) facet edges are the zero crossings of the second
+directional derivative with `f''>0, f'''<0` and a sub-pixel root inside
+the centre pixel (`|ρ₀| ≤ 1`).  The generator lives in
+[`benchmark/haralick_facet.py`](../benchmark/haralick_facet.py) — it takes
+`rho_max` (root bound) and `sigma` (pre-fit blur) as parameters, so the
+baseline can be tuned rather than quoted at a single fixed setting.
+
+Val ODS over a 3×3 grid:
+
+| ρ / σ | σ=0 (no blur) | σ=1.4 | σ=2.8 |
+|---|---|---|---|
+| ρ=0.5 | 0.4860 | 0.5014 | 0.4659 |
+| ρ=1.0 | 0.4996 | 0.5526 | 0.5759 |
+| ρ=2.0 | 0.5047 | 0.5634 | **0.5794** |
+
+Best val config ρ=2.0/σ=2.8 → test **0.5976 / 0.6218 / 0.5378**.
+Sensitivity is large (≈ +0.08 ODS from the untuned ρ≤1/no-blur row to the
+tuned one), so any comparison against Haralick must state the configuration.
+GDSD v2 at σ=2.8 beats even the tuned Haralick on both splits
+(+0.009 ODS test; +0.009 val).
+
+## Experiment: GDSD v4 (hysteresis) — not better than v2 σ2.8 (2026-09-08)
+
+**Hypothesis.**  v2 edges shatter into 1-px components; adding Canny-style
+hysteresis (strong = ZC with a gradient-side neighbour above Tp; weak =
+contrast crossings kept only when 8-connected to a strong pixel) would link
+contours and raise precision.  Implemented as a soft-map post-filter in
+[`benchmark/make_soft_hyst.py`](../benchmark/make_soft_hyst.py) — the
+binary detector and the σ value are untouched; only the set of pixels that
+receive a non-zero strength changes.
+
+**Results (official pr_eval, 99 thr):**
+
+| variant | val ODS | test ODS | test OIS | test AP |
+|---|---|---|---|---|
+| v2 σ=1.4 | 0.5724 | 0.5913 | 0.6180 | 0.4948 |
+| v4 hyst σ=1.4 | 0.5881 | 0.5959 | 0.6068 | 0.3934 |
+| v2 σ=2.8 | **0.5881** | **0.6070** | **0.6284** | **0.6085** |
+| v4 hyst σ=2.8 | 0.5844 | 0.5834 | 0.5854 | 0.4191 |
+
+**Verdict.**  Hysteresis helps at the *smaller* scale (+0.016 val ODS at
+σ=1.4, recall preserved) but hurts at σ=2.8 (−0.024 test ODS): at the wide
+scale the weak-ZC set is large and mostly unconnected, so hysteresis drops
+real recall (R 0.569 vs 0.688 for v2 σ2.8).  v4 never beats v2 σ2.8, so it
+is recorded as an experiment, not a release.
+
+## Experiment: thinning (NMS on the ZC set) — val, in progress (2026-09-08)
+
+**Hypothesis.**  A step edge produces a ± doublet ~2.4 px apart; the ZC set
+contains both flanks, capping precision.  Thinning along the gradient normal
+(keep a ZC only when it is a local maximum of gm among ZC pixels / against
+both normal neighbours) should remove the weaker flank.  Implemented in
+[`benchmark/make_soft_thin.py`](../benchmark/make_soft_thin.py) (modes
+`zcnms`, `gmnms`).  Same detector, same σ — ranking/post-processing only.
+
+**Val results (official pr_eval, 99 thr):**
+
+| variant (σ=1.4) | val ODS | val OIS | val AP |
+|---|---|---|---|
+| plain (= v2) | 0.5724 | 0.6215 | 0.4722 |
+| zcnms | 0.5770 | 0.6252 | 0.4772 |
+| gmnms | 0.5790 | 0.6260 | 0.4771 |
+
+Both modes improve val ODS (+0.005 / +0.007).  σ=2.8 runs and the test-split
+confirmation are pending; numbers here are val-only and not final.
 
 ## Negative result: GDSD v3 (Gaussian-weighted LSQ) — rejected (2026-09-08)
 
