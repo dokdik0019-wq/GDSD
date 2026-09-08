@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
 
     // Stage 0/1: blur + WLS quadratic fit (single pass, coefficients a..f)
     std::vector<double> blurred;
-    gdsd::gaussian_blur_5x5(gray, h, w, sigma, blurred);
+    gdsd::gaussian_blur(gray, h, w, sigma, blurred);
     int radius = 2, win = 2 * radius + 1;
     auto weights = gaussian_weights(radius, sigma_w);
     auto pinv = design_pinv_wls(radius, 0.1, weights);

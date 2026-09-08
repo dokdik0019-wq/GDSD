@@ -84,15 +84,16 @@ inline void to_gray_float(const std::vector<uint8_t>& img, int h, int w, int cha
     }
 }
 
-// Gaussian blur 5x5 (เหมือน cv2.GaussianBlur (5,5) sigmaX=sigmaY=sigma, BORDER_REFLECT)
-// ใช้ cv::GaussianBlur จริง (OpenCV) เพื่อให้ผลตรงกับ Python เป๊ะ
-inline void gaussian_blur_5x5(const std::vector<double>& src, int h, int w,
-                              double sigma, std::vector<double>& dst) {
+// Gaussian blur (kernel size derived from sigma via cv::Size(0,0), like
+// Python cv2.GaussianBlur (0,0)) — ใช้ cv::GaussianBlur จริง (OpenCV)
+// เพื่อให้ผลตรงกับ Python เป๊ะ; fixed 5x5 kernel อิ่มตัวที่ eff. sigma ~1.38
+inline void gaussian_blur(const std::vector<double>& src, int h, int w,
+                          double sigma, std::vector<double>& dst) {
     dst.resize(h * w);
     // src เป็น float [0,1] -> CV_64F Mat
     cv::Mat src_mat(h, w, CV_64F, (void*)src.data());
     cv::Mat blur_mat;
-    cv::GaussianBlur(src_mat, blur_mat, cv::Size(5, 5), sigma, sigma,
+    cv::GaussianBlur(src_mat, blur_mat, cv::Size(0, 0), sigma, sigma,
                      cv::BORDER_REFLECT);
     std::memcpy(dst.data(), blur_mat.data, h * w * sizeof(double));
 }
@@ -104,7 +105,7 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
                                double gradient_threshold, int radius, double step) {
     // blur
     std::vector<double> blurred;
-    gaussian_blur_5x5(gray, h, w, sigma, blurred);
+    gaussian_blur(gray, h, w, sigma, blurred);
 
     int win = 2 * radius + 1;
     auto pinv = design_pinv(radius, step);  // 6 x N

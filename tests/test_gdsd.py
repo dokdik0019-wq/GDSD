@@ -60,6 +60,20 @@ def test_reproducible():
     assert np.array_equal(r1["edge"], r2["edge"])
 
 
+def test_sigma_kernel_not_saturated():
+    # Regression (2026-09-08 review): a fixed 5x5 kernel caps effective
+    # sigma ~1.38, so sigma=1.4 and sigma=2.8 produced identical outputs.
+    # Kernel size must be derived from sigma (ksize=(0,0)); with that fix
+    # the two sigmas must genuinely differ on a noisy edge image.
+    img = make_demo_image(seed=3)
+    e14 = detect_edges(img, sigma=1.4)["edge"]
+    e28 = detect_edges(img, sigma=2.8)["edge"]
+    assert not np.array_equal(e14, e28)
+    # sanity: both still detect a reasonable number of edges
+    assert int(e14.sum()) > 50
+    assert int(e28.sum()) > 50
+
+
 def test_soft_edge_map_shapes_and_masks():
     img = make_demo_image()
     s1 = soft_edge_map(img, strength="response")

@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
     // d,e = linear coefficients (gradient) — fit ใหม่เหมือน detect_edges (parity เป๊ะ)
     std::vector<double> blurred;
-    gdsd::gaussian_blur_5x5(gray, h, w, sigma, blurred);
+    gdsd::gaussian_blur(gray, h, w, sigma, blurred);
     int radius = 2, win = 2*radius+1;
     auto pinv = gdsd::design_pinv(radius, 0.1);
     std::vector<double> pad((h+2*radius)*(w+2*radius));

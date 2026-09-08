@@ -62,11 +62,16 @@ def to_gray_float(image: np.ndarray) -> np.ndarray:
 
 
 def gaussian_blur(image: np.ndarray, sigma: float) -> np.ndarray:
-    """Gaussian smoothing with a 5x5 kernel (no-op when sigma <= 0)."""
+    """Gaussian smoothing (no-op when sigma <= 0).
+
+    ksize=(0, 0) lets OpenCV derive the kernel size from sigma, so the
+    requested sigma is actually realized (a fixed 5x5 kernel saturates at
+    ~1.38 effective sigma and silently caps larger values).
+    """
     if sigma <= 0.0:
         return image
     return cv2.GaussianBlur(
-        image, (5, 5), sigmaX=sigma, sigmaY=sigma, borderType=cv2.BORDER_REFLECT
+        image, (0, 0), sigmaX=sigma, sigmaY=sigma, borderType=cv2.BORDER_REFLECT
     )
 
 
