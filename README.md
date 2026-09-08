@@ -30,10 +30,10 @@ Test split (200 images), ODS / OIS / AP:
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5743 | 0.6014 | 0.3142 |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
 | Haralick facet (1984) | 0.5194 | 0.5513 | 0.4708 |
-| ELSE (NMS, double) ^ | 0.5143 | 0.5543 | 0.4711 |
-| ELSE (R, single) ^ | 0.5118 | 0.5592 | 0.4617 |
+| ELSE (NMS, double) † | 0.5143 | 0.5543 | 0.4711 |
+| ELSE (R, single) † | 0.5118 | 0.5592 | 0.4617 |
 
-^ ELSE soft maps are normalized per image (R / R.max()), not clip(R×255) —
+† ELSE soft maps are normalized per image (R / R.max()), not clip(R×255) —
 its 0.1-unit fit scales the response ~10× so clip saturates ranking; see
 [`docs/ELSE_BENCHMARK.md`](docs/ELSE_BENCHMARK.md).
 
@@ -46,8 +46,10 @@ val split (100 images), ODS / OIS / AP:
 | Canny | 0.5584 | 0.6044 | 0.4675 |
 | GDSD v1 (\|R\|@ZC) | 0.5565 | 0.6069 | 0.3069 |
 | Haralick | 0.4996 | 0.5507 | 0.4638 |
-| ELSE (NMS, double) ^ | 0.5099 | 0.5602 | 0.4853 |
-| ELSE (R, single) ^ | 0.5071 | 0.5647 | 0.4784 |
+| ELSE (NMS, double) † | 0.5099 | 0.5602 | 0.4853 |
+| ELSE (R, single) † | 0.5071 | 0.5647 | 0.4784 |
+
+† per-image normalized — same note as under the test table above.
 
 The "v1" variant (soft map strength = `|R|` at the zero crossing) is the
 original AMM 2026 soft map; v2 uses `gm` instead — the binary detector is
