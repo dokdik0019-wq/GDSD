@@ -90,6 +90,9 @@ readers can judge the risk of selection bias themselves.
   concern.  A fully clean protocol would pre-register `gm@ZC` and report
   test once; the numbers above should be read with that caveat.
 
+  In short: **we hypothesized gm@ZC from the doublet theory, then
+  confirmed on held-out val (0.5680) and test (0.5917).**
+
 - **What was *not* tuned on test.**  No parameter (σ, percentile, gate,
   thresholds) was selected by maximizing a test metric.  σ=1.4 vs 2.8
   give essentially identical test results, and the evaluation threshold
