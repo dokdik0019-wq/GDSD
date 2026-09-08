@@ -27,6 +27,8 @@ classifiers = [
 dependencies = [
     "numpy>=1.24",
     "opencv-python-headless>=4.8",
+    "scipy>=1.10",
+    "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
