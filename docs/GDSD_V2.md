@@ -58,6 +58,43 @@ candidates by local contrast, which aligns better with the human contour.
 This is a *soft-map* improvement: the binary edge map produced by
 `detect_edges` is unchanged.
 
+## Validation and honesty about the split used
+
+It is important to be explicit about *which* data informed the design, so
+readers can judge the risk of selection bias themselves.
+
+- **Theory (no GT needed).**  That a second derivative forms a +/− doublet
+  on a step edge is a mathematical property of `R`, not an empirical
+  finding.  Ranking zero-crossing pixels by a quantity that peaks *at*
+  the edge (gradient magnitude) instead of by the second-derivative value
+  (which is ~0 at the crossing) is therefore motivated independently of
+  any benchmark image.
+- **Where GT was used.**  The empirical *diagnosis* that quantified the
+  doublet (2.39 px separation, ~0.5 px offset, and that the human contour
+  sits between the |R| lobes) was measured on the **test split** (200
+  images) during the v2 research phase.  Choosing `gm@ZC` after inspecting
+  test-split geometry therefore carries a genuine design-selection risk:
+  the method was *not* frozen before looking at test data.
+- **Held-out confirmation on val.**  The val split was **not** used in any
+  design decision.  After the choice was frozen, the same protocol run on
+  val confirms the same ordering:
+
+| | val (held-out) ODS | test ODS |
+|---|---|---|
+| GDSD v2 (gm@ZC) | 0.5680 | 0.5917 |
+| GDSD v1 (\|R\|@ZC) | 0.5565 | 0.5743 |
+| Δ (v2 − v1) | **+0.0115** | +0.0174 |
+
+  The improvement direction is consistent on the split that was never
+  inspected, which weakens (but does not remove) the selection-bias
+  concern.  A fully clean protocol would pre-register `gm@ZC` and report
+  test once; the numbers above should be read with that caveat.
+
+- **What was *not* tuned on test.**  No parameter (σ, percentile, gate,
+  thresholds) was selected by maximizing a test metric.  σ=1.4 vs 2.8
+  give essentially identical test results, and the evaluation threshold
+  grid is fixed a priori by the official protocol.
+
 ## Effect on the official benchmark (BSDS500, py-bsds500)
 
 | Method (test, 200 images) | ODS | OIS | AP |
