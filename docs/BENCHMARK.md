@@ -60,6 +60,7 @@ labelled σ is the σ actually applied.
 
 | Method | ODS | OIS | AP | exec time (200 img) |
 |---|---|---|---|---|
+| **GDSD v2 σ=2.8 + zcnms thinning** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
@@ -88,6 +89,7 @@ val split (100 images), for completeness:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
+| **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
 | **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
 | Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
@@ -184,7 +186,7 @@ scale the weak-ZC set is large and mostly unconnected, so hysteresis drops
 real recall (R 0.569 vs 0.688 for v2 σ2.8).  v4 never beats v2 σ2.8, so it
 is recorded as an experiment, not a release.
 
-## Experiment: thinning (NMS on the ZC set) — val, in progress (2026-09-08)
+## Experiment: thinning (NMS on the ZC set) — zcnms confirmed on test (2026-09-08)
 
 **Hypothesis.**  A step edge produces a ± doublet ~2.4 px apart; the ZC set
 contains both flanks, capping precision.  Thinning along the gradient normal
@@ -193,16 +195,24 @@ both normal neighbours) should remove the weaker flank.  Implemented in
 [`benchmark/make_soft_thin.py`](../benchmark/make_soft_thin.py) (modes
 `zcnms`, `gmnms`).  Same detector, same σ — ranking/post-processing only.
 
-**Val results (official pr_eval, 99 thr):**
+**Results (official pr_eval, 99 thr):**
 
-| variant (σ=1.4) | val ODS | val OIS | val AP |
-|---|---|---|---|
-| plain (= v2) | 0.5724 | 0.6215 | 0.4722 |
-| zcnms | 0.5770 | 0.6252 | 0.4772 |
-| gmnms | 0.5790 | 0.6260 | 0.4771 |
+| variant | val ODS | test ODS | test OIS | test AP |
+|---|---|---|---|---|
+| v2 σ=2.8 plain | 0.5881 | 0.6070 | 0.6284 | 0.6085 |
+| **v2 σ=2.8 + zcnms** | **0.5916** | **0.6106** | **0.6318** | **0.6119** |
+| v2 σ=2.8 + gmnms | 0.5870 | — (val worse, not run on test) | | |
+| v2 σ=1.4 plain | 0.5724 | 0.5913 | 0.6180 | 0.4948 |
+| v2 σ=1.4 + zcnms | 0.5770 | — | | |
+| v2 σ=1.4 + gmnms | 0.5790 | — | | |
 
-Both modes improve val ODS (+0.005 / +0.007).  σ=2.8 runs and the test-split
-confirmation are pending; numbers here are val-only and not final.
+**Verdict.**  `zcnms` (suppress a ZC only when a *zero-crossing* neighbour
+along the gradient normal has strictly higher gm) is the release candidate:
+it improves every metric on val and test consistently (+0.0035 val /
++0.0036 test ODS).  `gmnms` (Canny-style suppression against any neighbour,
+ZC or not) helps at σ=1.4 (+0.007 val) but hurts at σ=2.8 — at the wide
+scale it removes too much real edge.  `zcnms` becomes the new headline GDSD
+variant: v2 σ=2.8 + zcnms.
 
 ## Negative result: GDSD v3 (Gaussian-weighted LSQ) — rejected (2026-09-08)
 

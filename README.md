@@ -38,6 +38,7 @@ GPU not used), Ubuntu 24.04 — serial loop, single run:
 
 | Method | ODS | OIS | AP | time (200 img) |
 |---|---|---|---|---|
+| **GDSD v2 σ=2.8 + zcnms thinning** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
@@ -47,6 +48,13 @@ GPU not used), Ubuntu 24.04 — serial loop, single run:
 | ELSE (NMS, double) † | 0.5143 | 0.5543 | 0.4711 | — |
 | ELSE (R, single) † | 0.5118 | 0.5592 | 0.4617 | — |
 | Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 | 16 s |
+
+The best GDSD variant is **v2 at σ=2.8 with `zcnms` thinning** — keeping a
+zero crossing only when it is a local maximum of gradient magnitude among
+zero-crossing neighbours along the gradient normal removes the weaker flank
+of the ±doublet (the human boundary lies between the lobes).  Val chose the
+mechanism; test confirms it (+0.0036 ODS over plain v2 σ2.8, consistent on
+val +0.0035).
 
 GDSD rows: batch C++ features (`gdsd_features_batch`, one process for all
 images — 5 s for 200 images) + soft map (1 s) + uint8 PNG (<1 s); v1 and
@@ -64,6 +72,7 @@ val split (100 images), ODS / OIS / AP:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
+| **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
 | **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
 | Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |

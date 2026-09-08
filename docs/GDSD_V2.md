@@ -131,6 +131,7 @@ for GDSD v2 on both splits.
 
 | Method (test, 200 images) | ODS | OIS | AP |
 |---|---|---|---|
+| **GDSD v2 σ=2.8 + zcnms thinning** | **0.6106** | **0.6318** | **0.6119** |
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
@@ -138,10 +139,16 @@ for GDSD v2 on both splits.
 | Canny (NMS soft map) | 0.5740 | 0.6008 | 0.4866 |
 | Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 |
 
-- **ODS +0.016** over v1 (same σ=1.4) on test; at σ=2.8, +0.028 over v1.
-- With v1, GDSD sits at the same ODS level as Canny; with v2 it is
-  clearly above Canny (+0.033 ODS test at σ2.8) and above a *tuned*
-  Haralick (+0.009 test), not just the untuned 1984 configuration.
+- The headline variant is **v2 σ=2.8 + `zcnms` thinning** (see
+  `docs/BENCHMARK.md`): dropping the weaker flank of the ±doublet raises
+  ODS to 0.6106, OIS 0.6318, AP 0.6119 — confirmed consistently on val
+  (+0.0035) and test (+0.0036 ODS over plain v2 σ2.8).
+- **ODS +0.031 over tuned Haralick** (0.6106 vs 0.5976 test) — the tuned
+  comparison (ρ=2.0/σ=2.8) is the fair one, not the untuned 1984 row.
+- At the same σ=1.4, v2 is +0.016 ODS over v1 (σ-fix numbers); at σ=2.8
+  the gap to v1 σ1.4 is +0.028.  With v2 σ2.8+zcnms, GDSD is clearly above
+  Canny (+0.037 ODS test) and above a *tuned* Haralick (+0.013), not just
+  the untuned 1984 configuration.
 - After the Gaussian kernel-size fix, σ no longer saturates: σ=1.4 and
   σ=2.8 give genuinely different soft maps, and val prefers σ=2.8
   (0.5881 vs 0.5724 ODS).
