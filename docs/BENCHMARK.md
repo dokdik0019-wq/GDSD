@@ -71,14 +71,17 @@ labelled σ is the σ actually applied.
 | Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 | 16 s |
 
 **Execution-time note.**  Column is detector-specific wall time for the
-full 200-image test split (serial loop on the 12-core research box,
-single run): GDSD = C++ features (σ1.4 14 s / σ2.8 15 s) + `make_soft.py`
-(1 s) + uint8 PNG (<1 s); v1/v2 share the features and differ only in the
-`make_soft.py` strength.  Haralick = `haralick_facet.py` (4 s at
-ρ=2.0/σ=2.8; the untuned config is the same code path).  Canny/Sobel =
-`make_softmaps.py` (15–16 s).  The official pr_eval matching (~5 min on
-this box) is excluded — it is a fixed protocol cost, identical for every
-method.  Raw timing log: `timing_results/run.log` on the research box.
+full 200-image test split (serial loop, single run) on the research box
+**sc7308**: AMD Ryzen 5 5600G (6 cores / 12 threads, up to 4.47 GHz),
+15 GB RAM, NVIDIA GTX 1660 SUPER 6 GB (not used — all timings are
+CPU-only), Ubuntu 24.04 LTS.  GDSD = C++ features (σ1.4 14 s / σ2.8 15 s)
++ `make_soft.py` (1 s) + uint8 PNG (<1 s); v1/v2 share the features and
+differ only in the `make_soft.py` strength.  Haralick =
+`haralick_facet.py` (4 s at ρ=2.0/σ=2.8; the untuned config is the same
+code path).  Canny/Sobel = `make_softmaps.py` (15–16 s).  The official
+pr_eval matching (~5 min on this box) is excluded — it is a fixed protocol
+cost, identical for every method.  Raw timing log:
+`timing_results/run.log` on the research box.
 
 val split (100 images), for completeness:
 
