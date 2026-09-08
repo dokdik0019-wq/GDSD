@@ -21,8 +21,15 @@ The detector is evaluated on BSDS500 with the **official BSDS benchmark**
 reproduction steps are in [`docs/BENCHMARK.md`](docs/BENCHMARK.md) and
 [`benchmark/`](benchmark/).
 
-Test split (200 images), ODS / OIS / AP — **σ-fix numbers** (Gaussian kernel
-auto-sized from σ, see [`docs/GDSD_V2.md`](docs/GDSD_V2.md) §Kernel):
+All numbers below were measured **after the Gaussian kernel-size fix**
+(commit `ca2ad97`, 2026-09-08).  The pre-fix code pinned the blur to a 5×5
+kernel, so the σ parameter silently saturated at ~1.35 and the old σ=1.4 and
+σ=2.8 rows were identical; that was a code bug, not a finding.  With the fix
+the kernel size is derived from σ, so each labelled σ is the σ actually
+applied.  Details: [`docs/BENCHMARK.md`](docs/BENCHMARK.md)
+(§ "What the kernel-size fix changed").
+
+Test split (200 images), ODS / OIS / AP:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|

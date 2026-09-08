@@ -110,7 +110,8 @@ readers can judge the risk of selection bias themselves.
   inspected, which weakens (but does not remove) the selection-bias
   concern.  A fully clean protocol would pre-register `gm@ZC` and report
   test once; the numbers above should be read with that caveat.  (These
-  are the post-kernel-fix numbers at σ=1.4; see `docs/BENCHMARK.md`.)
+  are the σ=1.4 rows after the Gaussian kernel-size fix, commit `ca2ad97`;
+  see `docs/BENCHMARK.md` for what changed.)
 
   In short: **we hypothesized gm@ZC from the doublet theory, then
   confirmed on held-out val (0.5724) and test (0.5913).**
@@ -123,8 +124,10 @@ readers can judge the risk of selection bias themselves.
 
 ## Effect on the official benchmark (BSDS500, py-bsds500)
 
-Post kernel-fix numbers (2026-09-08); σ=2.8 is the best single scale on
-both splits.
+Numbers below are measured after the Gaussian kernel-size fix (commit
+`ca2ad97`, 2026-09-08 — see `docs/BENCHMARK.md` for what changed): each σ
+is the σ actually applied.  With the fix, σ=2.8 is the best single scale
+for GDSD v2 on both splits.
 
 | Method (test, 200 images) | ODS | OIS | AP |
 |---|---|---|---|

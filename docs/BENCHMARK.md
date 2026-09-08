@@ -50,12 +50,13 @@ Soft edge map definitions (what the paper/README call v1 and v2):
 
 ## Results (official protocol, test split, 200 images)
 
-**σ-fix numbers (2026-09-08, commit `ca2ad97`).**  An earlier kernel bug
-pinned the Gaussian to 5×5, so σ values ≥ ~1.4 were never reached (measured
-effective σ: set 1.4 → 1.16, set 2.8 → 1.35).  After the fix the kernel
-size is auto-derived from σ.  All numbers below are the *fixed* protocol;
-the old README rows (σ1.4 = σ2.8 = 0.5917) were an artefact of that bug and
-are void.
+**How to read these numbers.**  All results below were measured after the
+Gaussian kernel-size fix (commit `ca2ad97`, 2026-09-08), described in the
+next section.  Pre-fix code pinned the blur kernel to 5×5, so the σ
+parameter never reached its labelled value for σ ≳ 1.4 (effective σ:
+set 1.4 → 1.16, set 2.8 → 1.35); the old rows where σ=1.4 and σ=2.8 scored
+identically (0.5917) were an artefact of that bug and are void.  Here each
+labelled σ is the σ actually applied.
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
@@ -87,9 +88,11 @@ AP values follow the official definition (area under the real PR curve,
 interpolated over recall) — classical detectors have low AP by nature,
 which is why AP is rarely the headline metric for them.
 
-## Kernel-size fix (2026-09-08, commit `ca2ad97`)
+## What the kernel-size fix changed (commit `ca2ad97`, 2026-09-08)
 
-`gdsd.py` and `src/cpp/gdsd_cpp.hpp` pinned the Gaussian blur kernel to 5×5:
+The code base lets the caller choose the smoothing scale σ (the Gaussian
+blur applied before the facet fit).  Before this commit, both `gdsd.py` and
+`src/cpp/gdsd_cpp.hpp` fixed the Gaussian kernel at 5×5:
 
 ```python
 cv2.GaussianBlur(image, (5, 5), sigmaX=sigma, ...)
