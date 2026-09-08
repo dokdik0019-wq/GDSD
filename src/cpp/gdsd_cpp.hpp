@@ -15,6 +15,8 @@ struct EdgeResult {
     std::vector<uint8_t> edge;      // h*w, 0/1
     std::vector<double> gradient_magnitude; // h*w
     std::vector<double> response;   // h*w
+    std::vector<double> d;          // linear coefficient along x (gradient), h*w
+    std::vector<double> e;          // linear coefficient along y (gradient), h*w
     double Tp = 0.0;
     double Tlow = 0.0;
 };
@@ -108,7 +110,8 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
     gaussian_blur(gray, h, w, sigma, blurred);
 
     int win = 2 * radius + 1;
-    auto pinv = design_pinv(radius, step);  // 6 x N
+    // design_pinv depends only on (radius, step) — compute once, cache across images
+    static const auto pinv = design_pinv(radius, step);  // 6 x N
 
     // padded (BORDER_REFLECT เหมือน np.pad mode="edge")
     std::vector<double> pad((h + 2*radius) * (w + 2*radius));
@@ -146,6 +149,8 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
     EdgeResult res;
     res.gradient_magnitude.resize(h*w);
     res.response.resize(h*w);
+    res.d.resize(h*w);
+    res.e.resize(h*w);
     res.edge.resize(h*w, 0);
     std::vector<uint8_t> valid(h*w, 0);
     std::vector<double> resp_valid;
@@ -154,26 +159,35 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
     for (int p = 0; p < h*w; ++p) {
         double g = std::hypot(d[p], e[p]);
         res.gradient_magnitude[p] = g;
+        res.d[p] = d[p];
+        res.e[p] = e[p];
         double R = 2.0*a[p]*d[p]*d[p] + 2.0*c[p]*d[p]*e[p] + 2.0*b[p]*e[p]*e[p];
         res.response[p] = R;
         if (g > gradient_threshold) { valid[p] = 1; resp_valid.push_back(R); }
     }
 
-    // percentile (ตรงกับ np.percentile: linear interpolation)
+    // percentile — O(n) nth_element (ตรงกับ np.percentile: linear interpolation
+    // ของ sorted value; ใช้ nth_element หา 2 ตำแหน่งแทน sort ทั้ง array)
     auto percentile_val = [](std::vector<double>& v, double pct) {
         if (v.empty()) return 0.0;
         size_t n = v.size();
         if (n == 1) return v[0];
-        std::sort(v.begin(), v.end());
         double rank = (pct / 100.0) * (n - 1);
         size_t lo = (size_t)std::floor(rank);
         size_t hi = (size_t)std::ceil(rank);
+        if (lo == hi) {
+            std::nth_element(v.begin(), v.begin() + lo, v.end());
+            return v[lo];
+        }
+        std::nth_element(v.begin(), v.begin() + lo, v.end());
+        double vlo = v[lo];
+        std::nth_element(v.begin(), v.begin() + hi, v.end());
+        double vhi = v[hi];
         double frac = rank - lo;
-        return v[lo] * (1.0 - frac) + v[hi] * frac;
+        return vlo * (1.0 - frac) + vhi * frac;
     };
-    std::vector<double> sorted = resp_valid;
-    double tp = percentile_val(sorted, percentile);
-    double tlow = percentile_val(sorted, 100.0 - percentile);
+    double tp = percentile_val(resp_valid, percentile);
+    double tlow = percentile_val(resp_valid, 100.0 - percentile);
     res.Tp = tp; res.Tlow = tlow;
 
     // neighbors ตาม quantized gradient direction + zero crossing + percentile contrast

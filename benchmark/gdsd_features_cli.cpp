@@ -40,32 +40,8 @@ int main(int argc, char** argv) {
 
     gdsd::EdgeResult res = gdsd::detect_edges(gray, h, w, /*percentile*/90.0,
                                               sigma, grad_thr, 2, 0.1);
-
-    // d,e = linear coefficients (gradient) — fit ใหม่เหมือน detect_edges (parity เป๊ะ)
-    std::vector<double> blurred;
-    gdsd::gaussian_blur(gray, h, w, sigma, blurred);
-    int radius = 2, win = 2*radius+1;
-    auto pinv = gdsd::design_pinv(radius, 0.1);
-    std::vector<double> pad((h+2*radius)*(w+2*radius));
-    auto pat = [&](int y, int x) -> double {
-        return blurred[std::min(std::max(y,0),h-1)*w + std::min(std::max(x,0),w-1)];
-    };
-    for (int y = -radius; y < h+radius; ++y)
-        for (int x = -radius; x < w+radius; ++x)
-            pad[(y+radius)*(w+2*radius)+(x+radius)] = pat(y,x);
-    std::vector<double> d(h*w), e(h*w);
-    #pragma omp parallel for schedule(static)
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x) {
-            double patch[25]; int idx=0;
-            for (int dy=0; dy<win; ++dy)
-                for (int dx=0; dx<win; ++dx)
-                    patch[idx++] = pad[(y+dy)*(w+2*radius)+(x+dx)];
-            double coef[6]={0,0,0,0,0,0};
-            for (int i=0;i<6;++i)
-                for (int n=0;n<win*win;++n) coef[i]+=pinv[i][n]*patch[n];
-            int p=y*w+x; d[p]=coef[3]; e[p]=coef[4];
-        }
+    const std::vector<double>& d = res.d;
+    const std::vector<double>& e = res.e;
 
     // ZC map (quantized gradient direction + sign change เหมือน detect_edges)
     std::vector<double> nb1(h*w, 0.0), nb2(h*w, 0.0);
