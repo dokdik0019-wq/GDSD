@@ -28,7 +28,7 @@ sys.path.insert(0, _PYBSDS)
 from bsds.bsds_dataset import BSDSDataset
 from bsds import evaluate_boundaries
 
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 
 # module-level state set by main() (needed by worker processes)
 _DS = None
@@ -91,7 +91,9 @@ def main():
     t0 = time.time()
     names = list(sample_names)
     chunks = [names[i::10] for i in range(10)]
-    with Pool(processes=10) as pool:
+    # fork context: module globals (_DS/_PNG_DIR/_THRESHOLDS) set in main()
+    # must be inherited by workers; macOS default spawn would re-import empty.
+    with get_context('fork').Pool(processes=10) as pool:
         results = pool.map(shard_eval, chunks)
 
     count_r = sum(r[0] for r in results)
