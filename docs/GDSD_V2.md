@@ -58,6 +58,27 @@ candidates by local contrast, which aligns better with the human contour.
 This is a *soft-map* improvement: the binary edge map produced by
 `detect_edges` is unchanged.
 
+### Figures
+
+**Same zero-crossing support, different strength** — two BSDS500 examples
+(image | v1 `|R|@ZC` | v2 `gm@ZC` soft maps; hot = stronger):
+
+![v1 vs v2 soft maps](figures/v1_vs_v2_softmaps.png)
+
+**Mechanism — the second-derivative doublet.**  One scan line across a
+real edge: the response `R` is a +/− doublet, so its absolute value is
+*small* near the zero crossing, while the gradient magnitude peaks at the
+edge:
+
+![doublet profile](figures/doublet_profile.png)
+
+**Near-GT vs far-GT strength.**  Boxplots of each strength at ZC pixels
+within 2.5 px of a human boundary vs farther away (10 val images, log
+scale).  Both strengths separate the groups, but the separation is
+cleaner for `gm`:
+
+![near-GT strength](figures/near_gt_strength_boxplot.png)
+
 ## Validation and honesty about the split used
 
 It is important to be explicit about *which* data informed the design, so
