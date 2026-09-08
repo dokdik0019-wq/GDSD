@@ -26,5 +26,9 @@ jobs:
         run: pytest tests/ -q
       - name: Demo smoke test
         run: python demo.py
+      - name: ELSE demo smoke test
+        run: |
+          python else/demo.py --image examples/sample_input.png --method else_single
+          python else/demo.py --image examples/sample_input.png --method else_double
       - name: Verify console entry point
         run: gdsd-demo --percentile 90

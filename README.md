@@ -290,6 +290,24 @@ Every push runs the test suite and the demo smoke test on
 Ubuntu, macOS, and Windows with Python 3.10, 3.11, and 3.12
 (`.github/workflows/ci.yml`).
 
+## Prior work: ELSE
+
+GDSD grew out of an earlier first-order method, **ELSE** (least-squares
+quadratic fit + elbow thresholding for edge detection), published as:
+
+> Sinlapakorn T, Limtrakul S, Wetweerapong J, Puphasuk P. Efficient image
+> edge detection method using least squares and elbow technique.
+> International Journal of Mathematics and Computer Science 2026;21(1):33–43.
+
+ELSE fits the same local 2D quadratic surface (3x3 window) but takes the
+first-order gradient magnitude `sqrt(D² + E²)` as the edge response and
+selects the threshold from an elbow (knee) point of the response curve; the
+double-threshold variant adds NMS + hysteresis. GDSD is the second-order
+successor: 5x5 fit, response = second directional derivative, zero-crossing
+decision rule.
+
+The original prototype lives in [`else/`](else/) with its own README and demo.
+
 ## Citation
 
 If you use this implementation in your work, please cite the paper that
@@ -321,6 +339,23 @@ BibTeX:
 
 The method is also described in the author's doctoral thesis,
 Chapter 3, Section 3.2.
+
+The prior ELSE method (`else/`) is cited as:
+
+```bibtex
+@article{sinlapakorn2026else,
+  author  = {Sinlapakorn, Thapakorn and Limtrakul, Saithip and
+             Wetweerapong, Jeerayut and Puphasuk, Pikul},
+  title   = {Efficient image edge detection method using least squares
+             and elbow technique},
+  journal = {International Journal of Mathematics and Computer Science},
+  volume  = {21},
+  number  = {1},
+  pages   = {33--43},
+  year    = {2026},
+  doi     = {10.69793/ijmcs/01.2026/pikul}
+}
+```
 
 ## License
 
