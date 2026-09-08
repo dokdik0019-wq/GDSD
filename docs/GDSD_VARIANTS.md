@@ -24,6 +24,7 @@ percentile-contrast gate) → soft map → official BSDS500 threshold sweep
 | **zcnms thinning** 🏆 | post-process: **drop** the weaker ZC flank | the doublet is ~2.4 px apart → the ZC set fires on **both flanks** of every edge (the human boundary lies between the lobes); keeping only the stronger gm flank raises precision without losing recall | keep a ZC only when it is a local max of gm **among ZC neighbours** along the gradient normal | **0.6106** | ✅ release |
 | gmnms (Canny-style NMS) | post-process: aggressive ZC thinning | NMS against *any* neighbour (ZC or not) | keep ZC when gm ≥ both normal neighbours | 0.5790 (σ1.4 val) / 0.5870 (σ2.8 val) | ❌ too aggressive at σ2.8 |
 | (reference) Haralick tuned | ρ=2.0, σ=2.8 | fair tuned baseline — the untuned 1984 row is not the comparison to beat | `benchmark/haralick_facet.py` with rho_max/sigma | 0.5976 | reference |
+| **v5 (committee threshold)** | evaluation: per-image threshold from a GT-blind predictor | OIS (0.6318) is higher than ODS (0.6106) → a committee choosing each image's threshold should recover part of that gap (CHEV-style) | linear/bin3 predictor on soft-map stats (mean/p90 gm@ZC), frozen on val | 0.6038 mean-F1 (linear) | ❌ +0.003 only — ceiling is structural |
 
 ## What each idea was betting on (one line per hypothesis)
 
@@ -62,6 +63,43 @@ percentile-contrast gate) → soft map → official BSDS500 threshold sweep
 | GDSD v2 σ1.4 | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | GDSD v1 σ1.4 | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny σ1.4 | 0.5740 | 0.6008 | 0.4866 | 15 s |
+
+## Negative result: v5 (per-image committee threshold) — rejected (2026-09-08)
+
+**Hypothesis (CHEV-style).**  OIS (0.6318 test) exceeds ODS (0.6106): the
+per-image GT-optimal thresholds differ (std ≈ 0.07, range 0.03–0.55), so a
+GT-blind committee predicting each image's threshold from soft-map
+statistics should recover part of the OIS−ODS gap.
+
+**Setup.**  Oracle analysis on val + test (`oracle_threshold_analysis.py`):
+per-image optimal threshold + GT-blind features (n_zc, mean/med/p90
+gm@ZC, edge density).  Predictors frozen on val only:
+`committee_threshold.py` (linear) and `eval_adaptive_thresholds.py`
+(global vs linear vs bin3 vs oracle, all under the *same* metric — mean
+per-image F1, so ODS is not compared against a mean).
+
+**Results (mean per-image F1, official matching):**
+
+| strategy | val | test |
+|---|---|---|
+| global (fixed thr 0.15) | 0.5920 | 0.6009 |
+| committee linear | 0.6010 | 0.6038 |
+| bin3 committee | 0.5961 | 0.6030 |
+| oracle (per-image GT-optimal) | 0.6304 | 0.6317 |
+
+**Verdict.**  The oracle ceiling itself is small (OIS−ODS ≈ +0.03, test)
+— this is *structural* for BSDS-type benchmarks (broad aligned optima,
+monotone shifts cannot fix ranking errors, per-image optima are noisy,
+precision is unobservable without GT).  A GT-blind predictor captures
+~10% of that ceiling: committee linear +0.003, bin3 +0.002, and an
+outlier-only rule (deviate only for the 4% of images needing high
+thresholds) is bounded by ≤ +0.002.  All variants are inside the
+per-image bootstrap noise of the benchmark — not worth the added
+complexity or the protocol deviation (per-image thresholds are not the
+standard ODS protocol).  Independent expert consult (Muse Spark)
+corroborates: "if oracle OIS−ODS < 0.03, stop; achievable < 0.006".
+**Rejected** — effort goes into soft-map ranking (local/spatial
+adaptation such as zcnms), not per-image scalars.
 
 ## Methodology rules that shaped this line
 
