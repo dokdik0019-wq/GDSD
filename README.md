@@ -100,6 +100,11 @@ A full description of the v2 soft map — why `gm@ZC` replaces `|R|@ZC`,
 the doublet diagnosis behind it, and its lineage — is in
 [`docs/GDSD_V2.md`](docs/GDSD_V2.md).
 
+A map of every GDSD variant tried (v1 → v2 → σ2.8 → v3 WLS → v4 hysteresis
+→ zcnms/gmnms thinning), the hypothesis behind each change, and the numbers
+that accepted or rejected it, is in
+[`docs/GDSD_VARIANTS.md`](docs/GDSD_VARIANTS.md).
+
 ## Quick start
 
 ```bash
