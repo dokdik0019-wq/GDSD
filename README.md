@@ -48,6 +48,10 @@ above Canny on the official benchmark (+0.018 ODS test, +0.008 AP test),
 while v1 sits at Canny's level on ODS (its low AP is the area under the
 real PR curve; classical detectors have low AP by nature).
 
+A full description of the v2 soft map — why `gm@ZC` replaces `|R|@ZC`,
+the doublet diagnosis behind it, and its lineage — is in
+[`docs/GDSD_V2.md`](docs/GDSD_V2.md).
+
 ## Quick start
 
 ```bash
@@ -256,7 +260,8 @@ GDSD/
 |   |-- bsds_official_eval.py     official BSDS500 evaluation (py-bsds500)
 |   `-- README.md                 benchmark reproduction steps
 |-- docs/
-|   `-- BENCHMARK.md              protocol description + full results
+|   |-- BENCHMARK.md              protocol description + full results
+|   `-- GDSD_V2.md                 v2 soft-map rationale, diagnosis, lineage
 |-- tests/
 |   |-- test_gdsd.py               pytest suite
 |   `-- verify_thesis_table44.py   thesis benchmark verification
