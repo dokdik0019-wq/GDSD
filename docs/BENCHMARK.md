@@ -57,16 +57,22 @@ Soft edge map definitions (what the paper/README call v1 and v2):
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5743 | 0.6014 | 0.3142 |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
 | Haralick facet (1984, cubic) | 0.5194 | 0.5513 | 0.4708 |
+| ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 |
+| ELSE (R, single) | 0.5118 | 0.5592 | 0.4617 |
+| Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 |
 
 val split (100 images), for completeness:
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| GDSD v2 σ=1.4 | 0.5680 | 0.6177 | 0.4428 |
 | GDSD v2 σ=2.8 | 0.5723 | 0.6207 | 0.4799 |
+| GDSD v2 σ=1.4 | 0.5680 | 0.6177 | 0.4428 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
 | **GDSD v1 (\|R\|@ZC)** | 0.5565 | 0.6069 | 0.3069 |
+| ELSE (NMS, double) | 0.5099 | 0.5602 | 0.4853 |
+| ELSE (R, single) | 0.5071 | 0.5647 | 0.4784 |
 | Haralick | 0.4996 | 0.5507 | 0.4638 |
+| Sobel | 0.4938 | 0.5457 | 0.1555 |
 
 Note: σ=1.4 and σ=2.8 give the same test numbers because the official
 evaluation thresholds each soft map over the same global grid; the σ
