@@ -74,6 +74,18 @@ def test_sigma_kernel_not_saturated():
     assert int(e28.sum()) > 50
 
 
+def test_thinning_zcnms_reduces_zc_without_touching_strength():
+    img = make_demo_image(seed=7)
+    s_plain = soft_edge_map(img, strength="gradient_magnitude", thinning="none")
+    s_zcnms = soft_edge_map(img, strength="gradient_magnitude", thinning="zcnms")
+    assert (s_zcnms > 0).sum() <= (s_plain > 0).sum()
+    # strength of surviving pixels unchanged (same gm values)
+    common = (s_plain > 0) & (s_zcnms > 0)
+    assert np.allclose(s_plain[common], s_zcnms[common])
+    # at least some pixels removed on the demo image (doublet flanks)
+    assert (s_zcnms > 0).sum() < (s_plain > 0).sum()
+
+
 def test_soft_edge_map_shapes_and_masks():
     img = make_demo_image()
     s1 = soft_edge_map(img, strength="response")

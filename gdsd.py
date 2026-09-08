@@ -237,6 +237,7 @@ def soft_edge_map(
     radius: int = 2,
     step: float = 0.1,
     strength: str = "gradient_magnitude",
+    thinning: str = "none",
 ) -> np.ndarray:
     """Build a GDSD *soft* edge map for threshold-based benchmark evaluation.
 
@@ -254,6 +255,16 @@ def soft_edge_map(
       ``gm = hypot(d, e)`` at the zero-crossing pixel.  v2 is the variant
       reported in ``docs/BENCHMARK.md``.
 
+    ``thinning`` optionally removes the weaker flank of the ±doublet that the
+    second-derivative response produces on a step edge (the lobes are ~2.4 px
+    apart and the human boundary lies between them):
+
+    - ``\"none\"``: keep every zero crossing (v2 as released).
+    - ``\"zcnms\"``: keep a zero crossing only when it is a local maximum of
+      the gradient magnitude among *zero-crossing neighbours* along the
+      gradient normal.  This is the headline variant in
+      ``docs/BENCHMARK.md`` / ``docs/GDSD_VARIANTS.md`` (v2 σ=2.8 + zcnms).
+
     All other parameters are identical to ``detect_edges``.
 
     Returns:
@@ -262,6 +273,8 @@ def soft_edge_map(
     """
     if strength not in ("response", "gradient_magnitude"):
         raise ValueError("strength must be 'response' (v1) or 'gradient_magnitude' (v2)")
+    if thinning not in ("none", "zcnms"):
+        raise ValueError("thinning must be 'none' or 'zcnms'")
 
     gray = to_gray_float(image)
     gray = gaussian_blur(gray, sigma)
@@ -286,6 +299,23 @@ def soft_edge_map(
             x2 = int(np.clip(x - step_x, 0, w - 1))
             if response[y1, x1] * response[y2, x2] < 0.0:
                 zero_crossing[y, x] = True
+
+    if thinning == "zcnms":
+        # vectorized suppression: drop a ZC if a ZC neighbour along the
+        # gradient normal has strictly higher gm (removes weaker doublet flank)
+        sy = np.rint(e / np.where(gradient_magnitude > 1e-12, gradient_magnitude, 1.0)).astype(int)
+        sx = np.rint(d / np.where(gradient_magnitude > 1e-12, gradient_magnitude, 1.0)).astype(int)
+        yy = np.arange(h)[:, None]
+        xx = np.arange(w)[None, :]
+        n1y = np.clip(yy + sy, 0, h - 1)
+        n1x = np.clip(xx + sx, 0, w - 1)
+        n2y = np.clip(yy - sy, 0, h - 1)
+        n2x = np.clip(xx - sx, 0, w - 1)
+        gm = gradient_magnitude
+        keep = zero_crossing.copy()
+        keep &= ~(zero_crossing[n1y, n1x] & (gm[n1y, n1x] > gm))
+        keep &= ~(zero_crossing[n2y, n2x] & (gm[n2y, n2x] > gm))
+        zero_crossing = keep
 
     strength_map = np.abs(response) if strength == "response" else gradient_magnitude
     soft = np.where(zero_crossing, strength_map, 0.0).astype(np.float32)
