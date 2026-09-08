@@ -60,10 +60,10 @@ labelled σ is the σ actually applied.
 
 | Method | ODS | OIS | AP | exec time (200 img) |
 |---|---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 16 s |
+| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
-| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | 15 s |
-| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | 15 s |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
+| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
 | Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 | ~4 s |
 | ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 | — |
@@ -74,9 +74,10 @@ labelled σ is the σ actually applied.
 full 200-image test split (serial loop, single run) on the research box
 **sc7308**: AMD Ryzen 5 5600G (6 cores / 12 threads, up to 4.47 GHz),
 15 GB RAM, NVIDIA GTX 1660 SUPER 6 GB (not used — all timings are
-CPU-only), Ubuntu 24.04 LTS.  GDSD = C++ features (σ1.4 14 s / σ2.8 15 s)
-+ `make_soft.py` (1 s) + uint8 PNG (<1 s); v1/v2 share the features and
-differ only in the `make_soft.py` strength.  Haralick =
+CPU-only), Ubuntu 24.04 LTS.  GDSD = batch C++ features
+(`gdsd_features_batch`, one process for all images — 5 s; σ1.4/σ2.8 same
+cost) + `make_soft.py` (1 s) + uint8 PNG (<1 s); v1/v2 share the features
+and differ only in the `make_soft.py` strength.  Haralick =
 `haralick_facet.py` (4 s at ρ=2.0/σ=2.8; the untuned config is the same
 code path).  Canny/Sobel = `make_softmaps.py` (15–16 s).  The official
 pr_eval matching (~5 min on this box) is excluded — it is a fixed protocol

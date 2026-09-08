@@ -38,22 +38,23 @@ GPU not used), Ubuntu 24.04 — serial loop, single run:
 
 | Method | ODS | OIS | AP | time (200 img) |
 |---|---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 16 s |
+| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
-| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | 15 s |
-| GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 | 15 s |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
+| GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
 | Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 | ~4 s |
 | ELSE (NMS, double) † | 0.5143 | 0.5543 | 0.4711 | — |
 | ELSE (R, single) † | 0.5118 | 0.5592 | 0.4617 | — |
 | Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 | 16 s |
 
-GDSD rows: C++ features (14–15 s for 200 images) + soft map (1 s) + uint8
-PNG (<1 s); v1 and v2 share the same feature extraction and differ only in
-the strength used by `make_soft.py`.  Haralick: `haralick_facet.py`
-(ρ=2.0/σ=2.8: 4 s; the untuned ρ≤1/no-blur config is the same code path).
-Canny/Sobel: `make_softmaps.py` (15–16 s).  All are wall-clock serial runs;
-per-image ≈ 0.08 s (GDSD/Canny/Sobel) and ≈ 0.02 s (Haralick).
+GDSD rows: batch C++ features (`gdsd_features_batch`, one process for all
+images — 5 s for 200 images) + soft map (1 s) + uint8 PNG (<1 s); v1 and
+v2 share the same feature extraction and differ only in the strength used
+by `make_soft.py`.  Haralick: `haralick_facet.py` (ρ=2.0/σ=2.8: 4 s; the
+untuned ρ≤1/no-blur config is the same code path).  Canny/Sobel:
+`make_softmaps.py` (15–16 s).  All are wall-clock serial runs; per-image
+≈ 0.03 s (GDSD), ≈ 0.02 s (Haralick), ≈ 0.08 s (Canny/Sobel).
 
 † ELSE soft maps are normalized per image (R / R.max()), not clip(R×255) —
 its 0.1-unit fit scales the response ~10× so clip saturates ranking; see
