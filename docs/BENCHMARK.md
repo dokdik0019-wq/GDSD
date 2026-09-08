@@ -75,6 +75,40 @@ official definition (area under the real PR curve, interpolated over
 recall) — classical detectors have low AP by nature, which is why AP is
 rarely the headline metric for them.
 
+## Negative result: GDSD v3 (Gaussian-weighted LSQ) — rejected (2026-09-08)
+
+**Hypothesis.**  Replacing the unweighted window least-squares fit with a
+Gaussian-weighted fit (`w(r,c) = exp(-(r²+c²)/(2σ_w²))`,
+`pinv_wls = (AᵀWA)⁻¹AᵀW`) would improve the local surface estimate and
+therefore edge quality.  The rest of the pipeline was identical to v2
+(`gm@ZC` soft map, official pr_eval).
+
+**Setup.**  σ (blur) = 1.4, σ_w (fit weight) = 1.4 — same scale as the
+blur so the window centre dominates.  Code:
+`benchmark/gdsd_features_wls.cpp`.
+
+**Results (official pr_eval, 99 thr):**
+
+| split | ODS | OIS | AP |
+|---|---|---|---|
+| val (100) | 0.5653 | 0.6158 | 0.4242 |
+| test (200) | 0.5841 | 0.6120 | 0.4398 |
+
+vs GDSD v2 on the same protocol: **−0.008 ODS test, −0.055 AP test**
+(v2 = 0.5917 / 0.6176 / 0.4949).  The direction is consistent on val
+(−0.003 ODS, −0.019 AP) and test, so it is not noise.
+
+**Verdict.**  Rejected — WLS at σ_w = 1.4 does *not* improve over v2; it
+is slightly worse.  v3 still beats v1 (+0.010 ODS test) and Canny
+(+0.010), but the WLS change is not worth the extra complexity.  This is
+consistent with the earlier WLS spike (weight *shape* moved F by
+< 0.001): the ranking change in v2 (`gm@ZC`) addressed the actual
+bottleneck (the second-derivative doublet), whereas the fit weighting
+does not.  Only σ_w = 1.4 was benchmarked; a larger σ_w (2.0–2.5, the
+value favoured in the earlier internal WLS experiment) was not run
+because the effect direction was already clear and negative on both
+splits.
+
 ## Internal protocol (thesis Table 4.4 / AMM 2026 §5.2)
 
 The thesis and the AMM 2026 paper report an *internal* benchmark on the
