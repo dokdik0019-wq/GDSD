@@ -58,17 +58,27 @@ set 1.4 → 1.16, set 2.8 → 1.35); the old rows where σ=1.4 and σ=2.8 scored
 identically (0.5917) were an artefact of that bug and are void.  Here each
 labelled σ is the σ actually applied.
 
-| Method | ODS | OIS | AP |
-|---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** |
-| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
-| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
-| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 |
-| Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
-| Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 |
-| ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 |
-| ELSE (R, single) | 0.5118 | 0.5592 | 0.4617 |
-| Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 |
+| Method | ODS | OIS | AP | exec time (200 img) |
+|---|---|---|---|---|
+| **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 16 s |
+| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | 15 s |
+| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | 15 s |
+| Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
+| Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 | ~4 s |
+| ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 | — |
+| ELSE (R, single) | 0.5118 | 0.5592 | 0.4617 | — |
+| Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 | 16 s |
+
+**Execution-time note.**  Column is detector-specific wall time for the
+full 200-image test split (serial loop on the 12-core research box,
+single run): GDSD = C++ features (σ1.4 14 s / σ2.8 15 s) + `make_soft.py`
+(1 s) + uint8 PNG (<1 s); v1/v2 share the features and differ only in the
+`make_soft.py` strength.  Haralick = `haralick_facet.py` (4 s at
+ρ=2.0/σ=2.8; the untuned config is the same code path).  Canny/Sobel =
+`make_softmaps.py` (15–16 s).  The official pr_eval matching (~5 min on
+this box) is excluded — it is a fixed protocol cost, identical for every
+method.  Raw timing log: `timing_results/run.log` on the research box.
 
 val split (100 images), for completeness:
 
