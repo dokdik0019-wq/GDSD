@@ -8,10 +8,12 @@ OPENCV_LIBS := $(shell pkg-config --libs opencv4 2>/dev/null || echo "-lopencv_c
 
 .PHONY: setup demo test clean build-cpp test-cpp build-benchmark
 
-build-benchmark:  ## Build the C++ benchmark feature extractor (benchmark/)
+build-benchmark:  ## Build the C++ benchmark feature extractors (benchmark/)
 	mkdir -p benchmark/build
 	$(CXX) $(CXXFLAGS) $(OPENCV_CFLAGS) -I src/cpp benchmark/gdsd_features_cli.cpp \
 		-o benchmark/build/gdsd_features_cli $(OPENCV_LIBS)
+	$(CXX) $(CXXFLAGS) $(OPENCV_CFLAGS) -I src/cpp benchmark/gdsd_features_wls.cpp \
+		-o benchmark/build/gdsd_features_wls $(OPENCV_LIBS)
 
 setup:            ## Install the package in editable mode with dev tools
 	$(PYTHON) -m pip install -e ".[dev]"
