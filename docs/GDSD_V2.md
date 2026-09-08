@@ -21,7 +21,7 @@ R = 2 a d² + 2 c d e + 2 b e²        (a, b, c = quadratic fit coefficients,
 
 | Variant | Soft map strength at zero-crossing pixels | Origin |
 |---|---|---|
-| **v1 (|R|@ZC)** | `abs(R)` | original GDSD (AMM 2026 paper, thesis) |
+| **v1 (\|R\|@ZC)** | `abs(R)` | original GDSD (AMM 2026 paper, thesis) |
 | **v2 (gm@ZC)** | `hypot(d, e)` — the gradient magnitude | this work (2026) |
 
 Both maps have the *same* support: the zero-crossing pixels.  They differ
@@ -103,7 +103,7 @@ readers can judge the risk of selection bias themselves.
 | | val (held-out) ODS | test ODS |
 |---|---|---|
 | GDSD v2 (gm@ZC) | 0.5724 | 0.5913 |
-| GDSD v1 (|R|@ZC) | 0.5614 | 0.5794 |
+| GDSD v1 (\|R\|@ZC) | 0.5614 | 0.5794 |
 | Δ (v2 − v1) | **+0.0110** | +0.0119 |
 
   The improvement direction is consistent on the split that was never
@@ -134,7 +134,7 @@ for GDSD v2 on both splits.
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
-| GDSD v1 (|R|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 |
+| GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 |
 | Canny (NMS soft map) | 0.5740 | 0.6008 | 0.4866 |
 | Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 |
 
