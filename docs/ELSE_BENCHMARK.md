@@ -7,8 +7,8 @@ comparable table.
 
 ## Protocol
 
-Same pipeline as GDSD v1/v2/Canny/Haralick tables (see `BENCHMARK.md` +
-`official-pr-protocol-2026-09-07` in the skill): py-bsds500 `pr_evaluation`
+Same pipeline as the GDSD v1/v2/Canny/Haralick tables in `BENCHMARK.md`:
+py-bsds500 `pr_evaluation`
 (CSA `correspond_pixels`, 1px cross-dilation matching, morphological
 thinning), 99 fixed global linspace thresholds over [0,1], uint8 PNG soft maps,
 ODS from accumulated counts / OIS mean per-image best F1 / AP interp over
@@ -44,16 +44,22 @@ auto-sized from σ (commit `ca2ad97`) — the same numbers as the current
 tables in `BENCHMARK.md`.  ELSE has no Gaussian pre-blur step, so its rows
 are unaffected by that fix.
 
+ELSE runtime (reference implementation, Python, single core, 200 test
+images): 87 s on the research box (Ryzen 5 5600G; 0.44 s/img) / 63 s on an
+M1 Pro (0.31 s/img), measured 2026-09-09 with
+`benchmark/make_else_soft_norm.py`'s per-image loop.
+
 ### test (200 images)
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
 | **GDSD v2 σ=2.8 + zcnms (headline)** | **0.6106** | **0.6318** | **0.6119** |
 | GDSD v2 (gm@ZC, σ=2.8) | 0.6070 | 0.6284 | 0.6085 |
+| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
-| Haralick facet (1984) | 0.5194 | 0.5513 | 0.4708 |
+| Haralick facet (1984, untuned) | 0.5194 | 0.5513 | 0.4708 |
 | **ELSE (NMS, double)** | **0.5143** | **0.5543** | **0.4711** |
 | **ELSE (R, single)** | **0.5118** | **0.5592** | **0.4617** |
 
@@ -63,12 +69,13 @@ are unaffected by that fix.
 |---|---|---|---|
 | **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
 | GDSD v2 σ=2.8 | 0.5881 | 0.6269 | 0.5998 |
+| Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
 | GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
-| Haralick | 0.4996 | 0.5507 | 0.4638 |
 | **ELSE (NMS, double)** | **0.5099** | **0.5602** | **0.4853** |
 | **ELSE (R, single)** | **0.5071** | **0.5647** | **0.4784** |
+| Haralick (1984, untuned) | 0.4996 | 0.5507 | 0.4638 |
 
 ## Lineage reading (for the thesis)
 
@@ -79,7 +86,10 @@ strength \|R\|@ZC → gm@ZC) 0.5913 (+0.012); the scale step σ=1.4 → 2.8 then
 adds +0.016 (0.6070) and zcnms thinning +0.004 (headline 0.6106).  ELSE ≈
 Haralick (0.5143 vs 0.5194), both below Canny.  Each GDSD design step lifts
 ODS clearly above the predecessor, and v1 already clears Canny, which is the
-honest lineage story.  ELSE's AP (0.47) is higher than GDSD v1's (0.35) —
+honest lineage story.  The tuned Haralick facet (ρ=2.0/σ=2.8, test 0.5976)
+sits between GDSD v2 σ=1.4 and the σ=2.8 steps — GDSD's headline margin over
+it is +0.013 test ODS (+0.011 against equally thinned Haralick, see
+`BENCHMARK.md`).  ELSE's AP (0.47) is higher than GDSD v1's (0.35) —
 expected: ELSE ranks by raw first-order strength on a full [0,1] scale,
 GDSD v1's map is sparse zero-crossing-gated \|R\|.
 
@@ -95,7 +105,10 @@ GDSD_BSDS_ROOT=<...> GDSD_PYBSDS_PATH=<py-bsds500> \
   python benchmark/run_official_pr.py else_nms_norm test <soft>/else_nms_norm/test 99
 ```
 
-Raw logs: `~/Desktop/GDSD-Paper/else-benchmark/logs/*_99.log`.
-Code correctness checks (fit/elbow/NMS/step-edge/analytic pinv): see
-`verify_else.py` run 2026-09-08 (10/12 auto-checks passed; 2 failures were
-over-strict synthetic-step assumptions, not method bugs).
+Code correctness: `else/demo.py` runs as a CI smoke step on every push
+(both single- and double-threshold variants on `examples/sample_input.png`).
+A one-off check suite (fit/elbow/NMS/step-edge/analytic pinv) ran on
+2026-09-08 with 10/12 auto-checks passing; the 2 failures were over-strict
+synthetic-step assumptions, not method bugs.  Raw benchmark logs live in
+the authors' working directories (not committed; BSDS500 redistribution
+restrictions apply to the images).

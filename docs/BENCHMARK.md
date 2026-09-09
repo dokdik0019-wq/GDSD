@@ -70,8 +70,8 @@ labelled σ is the σ actually applied.
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
 | Haralick facet (1984, ρ≤1, no blur) | 0.5194 | 0.5513 | 0.4708 | ~4 s |
-| ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 | — |
-| ELSE (R, single) | 0.5118 | 0.5592 | 0.4617 | — |
+| ELSE (NMS, double) | 0.5143 | 0.5543 | 0.4711 | 87 s (Python) |
+| ELSE (R, single) | 0.5118 | 0.5592 | 0.4617 | 87 s (Python) |
 | Sobel (NMS soft map, σ=1.4) | 0.5101 | 0.5456 | 0.1636 | 16 s |
 
 **Execution-time note.**  Column is detector-specific wall time for the
@@ -83,7 +83,10 @@ CPU-only), Ubuntu 24.04 LTS.  GDSD = batch C++ features
 cost) + `make_soft.py` (1 s) + uint8 PNG (<1 s); v1/v2 share the features
 and differ only in the `make_soft.py` strength.  Haralick =
 `haralick_facet.py` (4 s at ρ=2.0/σ=2.8; the untuned config is the same
-code path).  Canny/Sobel = `make_softmaps.py` (15–16 s).  The official
+code path).  Canny/Sobel = `make_softmaps.py` (15–16 s).  ELSE = the Python
+reference implementation `make_else_soft_norm.py`, single core, measured
+2026-09-09 (87 s; the per-image loop is NumPy-vectorized per image, so a
+batched/C++ port would sit near Haralick's class — not attempted here).  The official
 pr_eval matching (~5 min on this box) is excluded — it is a fixed protocol
 cost, identical for every method.  Raw timing log:
 `timing_results/run.log` on the research box.
