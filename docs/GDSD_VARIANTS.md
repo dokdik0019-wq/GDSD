@@ -61,6 +61,7 @@ percentile-contrast gate) → soft map → official BSDS500 threshold sweep
 | **GDSD v2 σ2.8 + zcnms** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | GDSD v2 σ2.8 (plain) | 0.6070 | 0.6284 | 0.6085 | 6 s |
 | Haralick tuned (ρ2.0/σ2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
+| Haralick tuned + zc_nms thinning | 0.5994 | 0.6218 | 0.5375 | ~4 s |
 | Haralick oct_zero (octant dir) | 0.5962 | 0.6255 | 0.5488 | ~4 s |
 | GDSD v2 σ1.4 | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | GDSD v1 σ1.4 | 0.5794 | 0.6055 | 0.3530 | ~6 s |
@@ -118,6 +119,22 @@ hand-picked.
 | [`figures/edge_overlay_101085.png`](figures/edge_overlay_101085.png) | example image: red = each variant's edges at its own ODS threshold, green = human ground truth |
 | [`figures/edge_overlay_101087.png`](figures/edge_overlay_101087.png) | second example image, same layout |
 | [`figures/variant_summary.csv`](figures/variant_summary.csv) | per-variant ODS/OIS/AP/best-thr/R/P (cross-check against tables above) |
+
+## Release & versioning policy (2026-09-09)
+
+Adopted after advisor feedback (status report §9.4): the release tag must
+not embed benchmark numbers — numbers change as the protocol/baselines are
+refined, and git tags are immutable.
+
+- Current release: **`v2.0.0`** → https://github.com/dokdik0019-wq/GDSD/releases/tag/v2.0.0
+- Benchmark numbers live in the **release notes** and in the docs tables
+  of the repo, never in the tag name.
+- An earlier tag `v2-zcnms-0.6106` (number in the name) was deleted and
+  replaced by `v2.0.0`; the eval bundle asset (repo + py-bsds500 under
+  `third_party/`, attribution in `BUNDLE_README.md`) is attached to the
+  release for code-availability / reproducibility.
+- Zenodo DOI can be minted from the release when the paper is submitted
+  (GitHub-Zenodo integration archives the tag).
 
 ## Methodology rules that shaped this line
 

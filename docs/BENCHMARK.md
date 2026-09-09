@@ -63,6 +63,7 @@ labelled σ is the σ actually applied.
 | **GDSD v2 σ=2.8 + zcnms thinning** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
+| Haralick facet tuned + zc_nms thinning | 0.5994 | 0.6218 | 0.5375 | ~4 s |
 | Haralick facet oct_zero (octant dir) | 0.5962 | 0.6255 | 0.5488 | ~4 s |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | ~6 s |
@@ -93,6 +94,7 @@ val split (100 images), for completeness:
 | **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
 | **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
 | Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
+| Haralick tuned + zc_nms thinning | 0.5816 | 0.6201 | 0.5299 |
 | Haralick oct_zero (octant dir) | 0.5776 | 0.6236 | 0.5408 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5614 | 0.6108 | 0.3459 |
@@ -175,6 +177,24 @@ consistent with the Rayleigh prediction (response ≈ convex combination of
 principal curvatures; median φ ≈ 15°, so octant error is negligible).
 GDSD v2 σ2.8 + zcnms remains above both Haralick configurations under the
 official protocol (+0.014 over oct_zero, +0.013 over continuous).
+
+**Thinning fairness (zc_nms on Haralick).**  `haralick_facet.py` also
+accepts `thinning="zc_nms"` — the same candidate-only NMS as GDSD's zcnms,
+applied to the Haralick analytic-rule edge set.  This is the fairness
+check: if thinning helps generic baselines, comparisons must give every
+method the same post-processing.  It helps Haralick a little (val
+0.5794→0.5816, test 0.5976→0.5994) but does not change the ordering —
+GDSD v2 σ2.8 + zcnms still leads the equally-thinned Haralick by
++0.010 val / +0.011 test ODS.  All GDSD-vs-Haralick comparisons below use
+the equally-thinned Haralick row when post-processing is the point.
+
+**Rank normalization zero-mapping.**  `rank_norm_soft.py` maps zero pixels
+to exactly zero and ranks only the nonzero candidates (a previous version
+ranked all pixels including zeros, giving background a nonzero value that
+destroyed precision at low thresholds — val AP of tuned Haralick under that
+buggy transform was 0.4475; with the fix it is 0.5537 val).  This matters
+for cross-protocol AP comparisons: rank-normalized AP is only meaningful
+when zero stays zero.
 
 ## Experiment: GDSD v4 (hysteresis) — not better than v2 σ2.8 (2026-09-08)
 
