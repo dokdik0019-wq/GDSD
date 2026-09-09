@@ -65,6 +65,7 @@ labelled σ is the σ actually applied.
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
 | Haralick facet tuned + zc_nms thinning | 0.5994 | 0.6218 | 0.5375 | ~4 s |
 | Haralick facet oct_zero (octant dir) | 0.5962 | 0.6255 | 0.5488 | ~4 s |
+| Haralick tuned + rank-norm (zero-fix) | 0.6032 | 0.6341 | 0.5571 | ~4 s + rank |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
@@ -96,6 +97,7 @@ val split (100 images), for completeness:
 | Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
 | Haralick tuned + zc_nms thinning | 0.5816 | 0.6201 | 0.5299 |
 | Haralick oct_zero (octant dir) | 0.5776 | 0.6236 | 0.5408 |
+| Haralick tuned + rank-norm (zero-fix) | 0.5908 | 0.6328 | 0.5537 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
@@ -106,7 +108,11 @@ val split (100 images), for completeness:
 
 AP values follow the official definition (area under the real PR curve,
 interpolated over recall) — classical detectors have low AP by nature,
-which is why AP is rarely the headline metric for them.
+which is why AP is rarely the headline metric for them.  The
+rank-normalized Haralick row applies `rank_norm_soft.py` before the sweep
+(its soft values are per-image ranks, not raw strengths), so it is
+comparable with the other Haralick rows only through the ODS/OIS columns;
+raw-sweep AP systematically favours gradient-magnitude scorers.
 
 ## What the kernel-size fix changed (commit `ca2ad97`, 2026-09-08)
 
@@ -191,10 +197,16 @@ the equally-thinned Haralick row when post-processing is the point.
 **Rank normalization zero-mapping.**  `rank_norm_soft.py` maps zero pixels
 to exactly zero and ranks only the nonzero candidates (a previous version
 ranked all pixels including zeros, giving background a nonzero value that
-destroyed precision at low thresholds — val AP of tuned Haralick under that
-buggy transform was 0.4475; with the fix it is 0.5537 val).  This matters
-for cross-protocol AP comparisons: rank-normalized AP is only meaningful
-when zero stays zero.
+destroyed precision at low thresholds — tuned Haralick under that buggy
+transform scored val AP 0.4475; with the fix, val 0.5908 / 0.6328 / 0.5537
+and test 0.6032 / 0.6341 / 0.5571).  Two readings: (1) for cross-protocol
+AP comparisons, rank-normalized AP is only meaningful when zero stays zero;
+(2) even with the corrected transform, rank normalization does not lift the
+reference Haralick configuration to the 0.61 AP reported by the internal
+pipeline — the remaining gap is attributable to that pipeline's matcher and
+thinning conventions, not to the zero mapping.  Rank normalization is a
+monotone per-image rescaling: it changes threshold-grid behaviour, never the
+edge set or OIS ranking within an image.
 
 ## Experiment: GDSD v4 (hysteresis) — not better than v2 σ2.8 (2026-09-08)
 
@@ -260,6 +272,13 @@ therefore edge quality.  The rest of the pipeline was identical to v2
 **Setup.**  σ (blur) = 1.4, σ_w (fit weight) = 1.4 — same scale as the
 blur so the window centre dominates.  Code:
 `benchmark/gdsd_features_wls.cpp`.
+
+**Provenance note.**  This run was extracted (2026-09-08 08:08) with the
+pre-`ca2ad97` fixed 5×5 blur kernel — effective σ ≈ 1.16, as in the
+pre-fix v1/v2 rows.  The comparison anchor below is therefore the pre-fix
+v2 number (0.5917), which keeps the pair apples-to-apples; the σ-fix moved
+v2 σ=1.4 by only +0.004 (0.5913), so the negative verdict is unaffected.
+A post-fix v3 rerun was judged unnecessary for a rejected variant.
 
 **Results (official pr_eval, 99 thr):**
 

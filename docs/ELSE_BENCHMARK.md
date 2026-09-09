@@ -39,13 +39,19 @@ standard "255 = strongest response per image" convention.
 
 ## Results (99 thr, uint8 PNG)
 
+GDSD/Canny/Haralick rows below are measured with the Gaussian blur kernel
+auto-sized from σ (commit `ca2ad97`) — the same numbers as the current
+tables in `BENCHMARK.md`.  ELSE has no Gaussian pre-blur step, so its rows
+are unaffected by that fix.
+
 ### test (200 images)
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| **GDSD v2 (gm@ZC, σ=1.4)** | **0.5917** | **0.6176** | **0.4949** |
-| GDSD v2 (gm@ZC, σ=2.8) | 0.5918 | 0.6176 | 0.4949 |
-| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5743 | 0.6014 | 0.3142 |
+| **GDSD v2 σ=2.8 + zcnms (headline)** | **0.6106** | **0.6318** | **0.6119** |
+| GDSD v2 (gm@ZC, σ=2.8) | 0.6070 | 0.6284 | 0.6085 |
+| GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 |
+| **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 |
 | Haralick facet (1984) | 0.5194 | 0.5513 | 0.4708 |
 | **ELSE (NMS, double)** | **0.5143** | **0.5543** | **0.4711** |
@@ -55,24 +61,27 @@ standard "255 = strongest response per image" convention.
 
 | Method | ODS | OIS | AP |
 |---|---|---|---|
-| GDSD v2 σ=1.4 | 0.5680 | 0.6177 | 0.4428 |
-| GDSD v2 σ=2.8 | 0.5723 | 0.6207 | 0.4799 |
+| **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
+| GDSD v2 σ=2.8 | 0.5881 | 0.6269 | 0.5998 |
+| GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
+| GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
-| GDSD v1 (\|R\|@ZC) | 0.5565 | 0.6069 | 0.3069 |
 | Haralick | 0.4996 | 0.5507 | 0.4638 |
 | **ELSE (NMS, double)** | **0.5099** | **0.5602** | **0.4853** |
 | **ELSE (R, single)** | **0.5071** | **0.5647** | **0.4784** |
 
 ## Lineage reading (for the thesis)
 
-On test ODS: ELSE 0.5143 → GDSD v1 (adds second-order zero-crossing decision
-+ Gaussian presmooth) 0.5743 (+0.060) → GDSD v2 (swaps soft-map strength
-|R|@ZC → gm@ZC) 0.5917 (+0.017).  ELSE ≈ Haralick (0.5143 vs 0.5194), both
-below Canny.  The two GDSD design steps each lift ODS clearly above the
-predecessor, and both clear Canny, which is the honest lineage story.  ELSE's
-AP (0.47) is higher than GDSD v1's (0.31) — expected: ELSE ranks by raw
-first-order strength on a full [0,1] scale, GDSD v1's map is sparse
-zero-crossing-gated |R|.
+On test ODS, attributing each design step at its own axis: ELSE 0.5143
+(first-order, no zero-crossing) → GDSD v1 (adds second-order zero-crossing
+decision + Gaussian presmooth) 0.5794 (+0.065) → GDSD v2 (swaps soft-map
+strength \|R\|@ZC → gm@ZC) 0.5913 (+0.012); the scale step σ=1.4 → 2.8 then
+adds +0.016 (0.6070) and zcnms thinning +0.004 (headline 0.6106).  ELSE ≈
+Haralick (0.5143 vs 0.5194), both below Canny.  Each GDSD design step lifts
+ODS clearly above the predecessor, and v1 already clears Canny, which is the
+honest lineage story.  ELSE's AP (0.47) is higher than GDSD v1's (0.35) —
+expected: ELSE ranks by raw first-order strength on a full [0,1] scale,
+GDSD v1's map is sparse zero-crossing-gated \|R\|.
 
 ## Reproduce
 
