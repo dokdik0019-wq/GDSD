@@ -77,7 +77,7 @@ labelled σ is the σ actually applied.
 
 **Execution-time note.**  Column is detector-specific wall time for the
 full 200-image test split (serial loop, single run) on the research box
-**sc7308**: AMD Ryzen 5 5600G (6 cores / 12 threads, up to 4.47 GHz),
+(AMD Ryzen 5 5600G, 6 cores / 12 threads, up to 4.47 GHz),
 15 GB RAM, NVIDIA GTX 1660 SUPER 6 GB (not used — all timings are
 CPU-only), Ubuntu 24.04 LTS.  GDSD = batch C++ features
 (`gdsd_features_batch`, one process for all images — 5 s; σ1.4/σ2.8 same
@@ -90,7 +90,8 @@ reference implementation `make_else_soft_norm.py`, single core, measured
 batched/C++ port would sit near Haralick's class — not attempted here).  The official
 pr_eval matching (~5 min on this box) is excluded — it is a fixed protocol
 cost, identical for every method.  Raw timing log:
-`timing_results/run.log` on the research box.
+`timing_results/run.log` on the research box (working directory, not
+committed).
 
 val split (100 images), for completeness:
 
@@ -179,7 +180,7 @@ GDSD v2 at σ=2.8 beats even the tuned Haralick on both splits
 `direction="octant"`: quantize the derivative direction to the nearest of
 8 octants (GDSD-style) before evaluating f''/f'''.  This is the
 configuration that ranks first in the internal rank-normalized pipeline
-(reported there as 0.6115 test ODS).  Under the official protocol used in
+(reported there as its top scorer).  Under the official protocol used in
 this repo the octant direction scores essentially the same as the
 continuous direction (ρ=2.0/σ=2.8): val 0.5776 vs 0.5794, test 0.5962 vs
 0.5976 — direction quantization is nearly free in both protocols,

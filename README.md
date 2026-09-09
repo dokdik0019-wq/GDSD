@@ -32,7 +32,7 @@ applied.  Details: [`docs/BENCHMARK.md`](docs/BENCHMARK.md)
 Test split (200 images), ODS / OIS / AP, with detector execution time
 (detector-specific cost only — C++/Python feature + soft-map generation;
 the official pr_eval matching is excluded because it is a fixed benchmark
-cost for every method).  Timing: research box sc7308 — AMD Ryzen 5 5600G
+cost for every method).  Timing: research box (AMD Ryzen 5 5600G
 (6C/12T, up to 4.47 GHz), 15 GB RAM, GTX 1660 SUPER 6 GB (CPU-only;
 GPU not used), Ubuntu 24.04 — serial loop, single run:
 
