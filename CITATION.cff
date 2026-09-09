@@ -1,6 +1,13 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
+type: software
 title: "GDSD — Gradient-Direction Second Derivative edge detector"
+version: "2.0.0"
+date-released: "2026-09-09"
+repository-code: "https://github.com/dokdik0019-wq/GDSD"
+license: MIT
+authors-strategy: first-author
+
 abstract: >-
   Second-order edge detection based on local quadratic surface fitting
   with least squares and zero-crossing of the gradient-direction second
