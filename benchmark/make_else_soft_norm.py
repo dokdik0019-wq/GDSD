@@ -31,9 +31,9 @@ from else_detector import nonmax_suppression          # noqa: E402
 from quadratic_fit import quadratic_coeff_maps          # noqa: E402
 
 ROOT = Path(os.environ.get("GDSD_BSDS_ROOT",
-            "/Users/dookdik/Desktop/mywork /dookdik13/test3/BIDS-BSDS500-a04b7c6"))
+            str(Path.home() / "gdsd-bsds-mac")))
 OUT = Path(os.environ.get("GDSD_ELSE_SOFT_OUT",
-            "/Users/dookdik/Desktop/GDSD-Paper/else-benchmark/soft"))
+            str(Path.cwd() / "else-benchmark-soft")))
 VARIANTS = {"else_r_norm": "r", "else_nms_norm": "n"}
 SPLITS = ["val", "test"]
 

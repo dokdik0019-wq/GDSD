@@ -1,7 +1,7 @@
 // =====================================================================
-// gdsd_features_cli.cpp — CLI: อ่านภาพ -> GDSD C++ -> เขียน response/gradient/ZC
+// gdsd_features_cli.cpp — CLI: read image -> GDSD C++ -> write response/gradient/ZC
 // Output: <prefix>.response.npy, .d.npy, .e.npy, .zc.npy (float64, h x w)
-// ใช้สร้าง soft edge map / PR curve สำหรับ benchmark ODS/OIS/AP
+// Used to build the soft edge map / PR curve for the ODS/OIS/AP benchmark
 // =====================================================================
 #include <cstdio>
 #include <cstdlib>
@@ -11,11 +11,11 @@
 #include <cmath>
 #include <algorithm>
 #include <opencv2/opencv.hpp>
-// C++ core จาก src/cpp (compile ด้วย -I src/cpp — ดู Makefile build-benchmark)
+// C++ core from src/cpp (compile with -I src/cpp — see Makefile build-benchmark)
 #include "gdsd_cpp.hpp"
 
 static bool write_f64(const std::string& path, const std::vector<double>& data, int h, int w) {
-    // raw little-endian float64 ต่อเนื่อง h*w — อ่านด้วย np.fromfile().reshape(h,w)
+    // raw little-endian float64, contiguous h*w — read with np.fromfile().reshape(h,w)
     FILE* fp = std::fopen(path.c_str(), "wb");
     if (!fp) return false;
     std::fwrite(data.data(), 1, data.size() * sizeof(double), fp);
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     const std::vector<double>& d = res.d;
     const std::vector<double>& e = res.e;
 
-    // ZC map (quantized gradient direction + sign change เหมือน detect_edges)
+    // ZC map (quantized gradient direction + sign change, same as detect_edges)
     std::vector<double> nb1(h*w, 0.0), nb2(h*w, 0.0);
     #pragma omp parallel for schedule(static)
     for (int y = 0; y < h; ++y)

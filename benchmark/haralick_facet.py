@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """haralick_facet.py — Haralick (1984) cubic facet edge detector + soft map generator
 
-อ้างอิง: Haralick, "Digital Step Edges from Zero Crossing of Second Directional
+Reference: Haralick, "Digital Step Edges from Zero Crossing of Second Directional
 Derivatives", IEEE TPAMI 6(1):58-68, 1984.
 https://www.haralick.org/journals/04767475.pdf
 
-Cubic facet fit บน 5x5 (discrete orthogonal polynomial basis):
+Cubic facet fit on the 5x5 window (discrete orthogonal polynomial basis):
   f(x,y) = a0 + a1 x + a2 y + a3 x^2 + a4 xy + a5 y^2 + a6 x^3 + a7 x^2y + a8 xy^2 + a9 y^3
-Coefficient แต่ละตัว = linear combination ของ 5x5 patch → convolution กับ mask (เร็ว)
+Each coefficient = a linear combination of the 5x5 patch -> convolution with a mask (fast)
 
-Second directional derivative ตามทิศ unit gradient (u,v) = (fx,fy)/|g| ที่ center:
+Second directional derivative along the unit gradient (u,v) = (fx,fy)/|g| at the center:
   f''(0) = 2(a3 u^2 + a4 uv + a5 v^2)
-  f'''(0) = 6(a6 u^3 + a7 u^2v + a8 uv^2 + a9 v^3)   (d/drho ของ f'')
-Step edge เมื่อ f'' มี zero crossing แบบ negatively sloped ใน pixel:
-  f''(0) > 0, f'''(0) < 0, และ |rho0| = |−f''/f'''| <= 1  (root ใน pixel)
+  f'''(0) = 6(a6 u^3 + a7 u^2v + a8 uv^2 + a9 v^3)   (d/drho of f'')
+Step edge when f'' has a negatively sloped zero crossing inside the pixel:
+  f''(0) > 0, f'''(0) < 0, and |rho0| = |−f''/f'''| <= 1  (root inside the pixel)
 
-Soft map (สำหรับ PR curve): strength = |g| = hypot(fx,fy) ที่ pixel ขอบ (คล้าย GDSD soft2)
-วิธีใช้: python haralick_facet.py <img_dir> <out_dir>
+Soft map (for the PR curve): strength = |g| = hypot(fx,fy) at edge pixels (like GDSD soft2)
+Usage: python haralick_facet.py <img_dir> <out_dir>
 """
 from __future__ import annotations
 import sys
@@ -26,8 +26,8 @@ import cv2
 
 def make_facet_masks(r=2):
     """Return 10 masks (2r+1)x(2r+1) — least-squares coefficient kernels.
-    mask[k] พอดีกับ np.pad(gray, r, 'edge') convolution.
-    Basis ที่ offset (x,y) ∈ {-r..r}²: [1, x, y, x², xy, y², x³, x²y, xy², y³]"""
+    mask[k] matches np.pad(gray, r, 'edge') convolution exactly.
+    Basis at offset (x,y) in {-r..r}^2: [1, x, y, x^2, xy, y^2, x^3, x^2y, xy^2, y^3]"""
     coords = np.arange(-r, r + 1, dtype=np.float64)
     xs, ys = np.meshgrid(coords, coords)
     x = xs.ravel(); y = ys.ravel()
@@ -67,7 +67,7 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
                                 borderType=cv2.BORDER_REFLECT)
     h, w = gray.shape
     pad = cv2.copyMakeBorder(gray, r, r, r, r, cv2.BORDER_REPLICATE)
-    # coefficient maps via filter2D (correlation = conv with kernel rotated; masks สมมาตรพอดี)
+    # coefficient maps via filter2D (correlation = conv with kernel rotated; masks are symmetric)
     def cmap(k):
         return cv2.filter2D(pad, cv2.CV_64F, masks[k])[r:r+h, r:r+w]
     # precompute all 10
@@ -100,7 +100,7 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
     fpp = 2.0 * (a3 * u*u + a4 * u*v + a5 * v*v)
     fppp = 6.0 * (a6 * u**3 + a7 * u*u*v + a8 * u*v*v + a9 * v**3)
 
-    # rho0 of f'' -> zero (sub-pixel, ตาม (u,v)); root อยู่ใน pixel เมื่อ |rho0| <= rho_max
+    # rho0 of f'' -> zero (sub-pixel, along (u,v)); root lies in the pixel when |rho0| <= rho_max
     with np.errstate(divide="ignore", invalid="ignore"):
         denom = np.abs(fppp) > 1e-12
         rho0 = np.full_like(fpp, np.nan)
@@ -129,7 +129,7 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
         keep &= ~(e1 & (gm[n1y, n1x] > gm))
         keep &= ~(e2 & (gm[n2y, n2x] > gm))
         edge = keep
-    # Haralick: edge strength = |gradient| (soft map คล้าย GDSD2)
+    # Haralick: edge strength = |gradient| (soft map like GDSD2)
     strength = np.where(edge, gm, 0.0).astype(np.float32)
     return strength, {"edge_px": int(edge.sum()), "fpp_pos": int((fpp > 0).sum()),
                       "valid": int(valid.sum()), "gm": gm, "rho0": rho0, "edge": edge}

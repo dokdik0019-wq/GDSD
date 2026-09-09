@@ -1,5 +1,5 @@
 // =====================================================================
-// gdsd_cpp.hpp — GDSD native C++ core (อัลกอริทึมเดียวกับ gdsd.py เป๊ะ)
+// gdsd_cpp.hpp — GDSD native C++ core (bit-exact same algorithm as gdsd.py)
 // =====================================================================
 #pragma once
 #include <vector>
@@ -21,7 +21,7 @@ struct EdgeResult {
     double Tlow = 0.0;
 };
 
-// ตรงกับ gdsd.py: pinv ของ design matrix (2r+1)^2 x 6
+// Matches gdsd.py: pinv of the design matrix (2r+1)^2 x 6
 inline std::vector<std::vector<double>> design_pinv(int radius, double step) {
     int win = 2 * radius + 1;
     int N = win * win;
@@ -73,8 +73,8 @@ inline std::vector<std::vector<double>> design_pinv(int radius, double step) {
     return pinv;
 }
 
-// ตรงกับ gdsd.py to_gray_float: BGR -> gray float [0,1] (divide by 255 if max>1)
-// input: uint8 HxWx3 BGR หรือ HxW gray
+// Matches gdsd.py to_gray_float: BGR -> gray float [0,1] (divide by 255 if max>1)
+// input: uint8 HxWx3 BGR or HxW gray
 inline void to_gray_float(const std::vector<uint8_t>& img, int h, int w, int channels,
                           std::vector<double>& gray) {
     gray.resize(h * w);
@@ -87,12 +87,12 @@ inline void to_gray_float(const std::vector<uint8_t>& img, int h, int w, int cha
 }
 
 // Gaussian blur (kernel size derived from sigma via cv::Size(0,0), like
-// Python cv2.GaussianBlur (0,0)) — ใช้ cv::GaussianBlur จริง (OpenCV)
-// เพื่อให้ผลตรงกับ Python เป๊ะ; fixed 5x5 kernel อิ่มตัวที่ eff. sigma ~1.38
+// Python cv2.GaussianBlur (0,0)) — uses the real cv::GaussianBlur (OpenCV)
+// so results match Python exactly; a fixed 5x5 kernel saturates at eff. sigma ~1.38
 inline void gaussian_blur(const std::vector<double>& src, int h, int w,
                           double sigma, std::vector<double>& dst) {
     dst.resize(h * w);
-    // src เป็น float [0,1] -> CV_64F Mat
+    // src is float [0,1] -> CV_64F Mat
     cv::Mat src_mat(h, w, CV_64F, (void*)src.data());
     cv::Mat blur_mat;
     cv::GaussianBlur(src_mat, blur_mat, cv::Size(0, 0), sigma, sigma,
@@ -100,8 +100,8 @@ inline void gaussian_blur(const std::vector<double>& src, int h, int w,
     std::memcpy(dst.data(), blur_mat.data, h * w * sizeof(double));
 }
 
-// fit_quadratic_maps + detect_edges ทั้งหมด (ตรงกับ gdsd.py detect_edges)
-// รับ gray float [0,1] ขนาด h x w
+// fit_quadratic_maps + detect_edges as a whole (matches gdsd.py detect_edges)
+// takes gray float [0,1] of size h x w
 inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
                                double percentile, double sigma,
                                double gradient_threshold, int radius, double step) {
@@ -113,7 +113,7 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
     // design_pinv depends only on (radius, step) — compute once, cache across images
     static const auto pinv = design_pinv(radius, step);  // 6 x N
 
-    // padded (BORDER_REFLECT เหมือน np.pad mode="edge")
+    // padded (BORDER_REFLECT like np.pad mode="edge")
     std::vector<double> pad((h + 2*radius) * (w + 2*radius));
     auto pat = [&](int y, int x) -> double {
         int yy = std::min(std::max(y, 0), h-1);
@@ -166,8 +166,8 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
         if (g > gradient_threshold) { valid[p] = 1; resp_valid.push_back(R); }
     }
 
-    // percentile — O(n) nth_element (ตรงกับ np.percentile: linear interpolation
-    // ของ sorted value; ใช้ nth_element หา 2 ตำแหน่งแทน sort ทั้ง array)
+    // percentile — O(n) nth_element (matches np.percentile: linear interpolation
+    // of sorted values; nth_element finds the 2 positions instead of sorting all)
     auto percentile_val = [](std::vector<double>& v, double pct) {
         if (v.empty()) return 0.0;
         size_t n = v.size();
@@ -190,7 +190,7 @@ inline EdgeResult detect_edges(const std::vector<double>& gray, int h, int w,
     double tlow = percentile_val(resp_valid, 100.0 - percentile);
     res.Tp = tp; res.Tlow = tlow;
 
-    // neighbors ตาม quantized gradient direction + zero crossing + percentile contrast
+    // neighbors along the quantized gradient direction + zero crossing + percentile contrast
     std::vector<double> nb1(h*w, 0.0), nb2(h*w, 0.0);
     #pragma omp parallel for schedule(static)
     for (int y = 0; y < h; ++y) {

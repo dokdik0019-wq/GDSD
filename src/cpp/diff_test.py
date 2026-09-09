@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-"""diff_test.py — differential test: เปรียบ C++ กับ Python (gdsd.py) ต้องตรง 100%
+"""diff_test.py — differential test: C++ vs Python (gdsd.py) must match 100%
 
-วิธี:
-  1. เลือกภาพตัวอย่าง (default: 3 รูปจาก BSDS500 train)
-  2. รัน Python detect_edges -> edge map
-  3. รัน C++ gdsd_cli -> edge map
-  4. เปรียบ: identical? mismatch pixels? Tp/Tlow ใกล้กัน?
+Procedure:
+  1. Pick sample images (default: 3 from BSDS500 train)
+  2. Run Python detect_edges -> edge map
+  3. Run C++ gdsd_cli -> edge map
+  4. Compare: identical? mismatch pixels? are Tp/Tlow close?
 
 Data:
-  - ต้องการ BSDS500 images อย่างน้อย (fault-tolerant: ถ้าไม่มี data/ ข้าง repo
-    ให้ใช้ GDSD_BSDS_DATA env ชี้ไปที่โฟลเดอร์ data/ ที่มี images/train)
-  - ถ้าไม่มี BSDS เลย จะ fallback สร้างภาพสังเคราะห์ (demo) 3 รูป
+  - Requires BSDS500 images (fault-tolerant: if there is no data/ next to the repo,
+    set the GDSD_BSDS_DATA env var to a data/ folder containing images/train)
+  - Without any BSDS data, falls back to 3 synthetic (demo) images
 """
 import os, subprocess, sys
 from pathlib import Path
 import numpy as np
 import cv2
 
-# repo root = src/cpp/.. (มี gdsd.py อยู่)
+# repo root = src/cpp/.. (where gdsd.py lives)
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 from gdsd import detect_edges
 
-# หา data: env override -> data/ ข้าง repo
+# locate data: env override -> data/ next to the repo
 DATA_DIR = Path(os.environ.get("GDSD_BSDS_DATA", str(ROOT / "data")))
 IMG_DIR = DATA_DIR / "images" / "train"
 CPP_BIN = ROOT / "src" / "cpp" / "build" / "gdsd_cli"
@@ -30,7 +30,7 @@ SAMPLES = ["100075.jpg", "100080.jpg", "100098.jpg"]
 
 
 def make_synthetic(name, path):
-    """สร้างภาพสังเคราะห์ (เหมือน demo.py) สำหรับกรณีไม่มี BSDS"""
+    """Build synthetic images (like demo.py) for the no-BSDS case"""
     img = np.zeros((256, 256), np.uint8)
     cv2.rectangle(img, (20, 20), (110, 110), 160, -1)
     cv2.line(img, (130, 35), (220, 215), 230, 4)
@@ -45,7 +45,7 @@ def make_synthetic(name, path):
 def run_cpp(img_path, out_path, pct=90.0, sigma=1.4):
     if not CPP_BIN.exists():
         return None, f"C++ binary not found: {CPP_BIN} (run make build-cpp)"
-    # C++ เขียน PNG
+    # C++ writes PNG
     png_path = out_path.with_suffix(".png")
     r = subprocess.run([str(CPP_BIN), str(img_path), str(png_path),
                         str(pct), str(sigma), "0.01"],
@@ -63,7 +63,7 @@ def main() -> int:
         print(f"[SKIP] build C++ first: make build-cpp (missing {CPP_BIN})")
         return 2
 
-    # เตรียม sample paths
+    # prepare sample paths
     use_synthetic = not IMG_DIR.exists()
     if use_synthetic:
         print("[INFO] BSDS data not found — using synthetic images")

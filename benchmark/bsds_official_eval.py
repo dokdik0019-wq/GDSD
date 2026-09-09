@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""bsds_official_eval.py — ประเมิน soft maps ด้วย official BSDS benchmark (py-bsds500)
+"""bsds_official_eval.py — evaluate soft maps with the official BSDS benchmark (py-bsds500)
 
-ใช้ correspond_pixels (C++ CSA) + morphological thinning + per-human GT matching
-เหมือน official BSDS evaluation suite → ODS/OIS/AP ที่เทียบ literature ได้
+Uses correspond_pixels (C++ CSA) + morphological thinning + per-human GT matching
+identical to the official BSDS evaluation suite -> ODS/OIS/AP comparable to the literature
 
-วิธีใช้: python bsds_official_eval.py <method> <split> [n_thresholds]
-  <method> = ชื่อโฟลเดอร์ใน ods_ois_ap/soft/ (haralick, gdsd2, canny, sobel, log)
+Usage: python bsds_official_eval.py <method> <split> [n_thresholds]
+  <method> = folder name under ods_ois_ap/soft/ (haralick, gdsd2, canny, sobel, log)
   split = val | test
 Output: ODS, OIS, AP
 """
@@ -30,10 +30,10 @@ from bsds.bsds_dataset import BSDSDataset
 from bsds import evaluate_boundaries
 
 def compute_ap(count_r, sum_r, count_p, sum_p):
-    """AP จาก accumulators ตลอด thresholds (วิธีเดียวกับ official: ปริพันธ์ใต้ PR)."""
+    """AP from the accumulators across thresholds (same as official: area under PR)."""
     R = count_r / (sum_r + (sum_r == 0))
     P = count_p / (sum_p + (sum_p == 0))
-    # interpolated AP (P ที่ recall >= L)
+    # interpolated AP (P at recall >= L)
     recall_grid = np.linspace(0, 1, 101)
     ap = 0.0
     for L in recall_grid:
@@ -95,7 +95,7 @@ def main():
     count_p_all = np.zeros(n_thr); sum_p_all = np.zeros(n_thr)
     per_img_best = []
 
-    # parallel ข้ามภาพ (CSA เป็น CPU-bound; box มี 12 core แต่มีงานอื่นรัน → ใช้ 4)
+    # parallel across images (CSA is CPU-bound; the box has 12 cores but other jobs run -> use 4)
     import functools
     work = [(sid, soft_dir, name_map, thresholds, ds) for sid in ids]
     with Pool(processes=4) as pool:
@@ -106,7 +106,7 @@ def main():
         if (i + 1) % 10 == 0:
             print(f"  {i+1}/{len(ids)} ({time.time()-t0:.0f}s)", flush=True)
 
-    # ODS: F สูงสุดจาก accumulators รวม
+    # ODS: best F from the pooled accumulators
     R_ods = count_r_all / (sum_r_all + (sum_r_all == 0))
     P_ods = count_p_all / (sum_p_all + (sum_p_all == 0))
     F_ods = 2*R_ods*P_ods/(R_ods+P_ods+1e-12)

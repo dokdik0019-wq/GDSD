@@ -1,6 +1,6 @@
 // =====================================================================
-// gdsd_cli.cpp — CLI: อ่านภาพ (OpenCV) -> รัน GDSD C++ -> เขียน edge map
-// ใช้: ./gdsd_cli <in.jpg> <out.npy หรือ out.png> [percentile] [sigma]
+// gdsd_cli.cpp — CLI: read image (OpenCV) -> run GDSD C++ -> write edge map
+// Usage: ./gdsd_cli <in.jpg> <out.npy or out.png> [percentile] [sigma]
 // =====================================================================
 #include <cstdio>
 #include <cstdlib>
@@ -11,7 +11,7 @@
 #include <opencv2/opencv.hpp>
 #include "gdsd_cpp.hpp"
 
-// เขียน .npy (uint8, shape h x w) — ใช้กับ differential test
+// Write .npy (uint8, shape h x w) — used by the differential test
 static bool write_npy(const std::string& path, const std::vector<uint8_t>& data,
                       int h, int w) {
     FILE* fp = std::fopen(path.c_str(), "wb");
@@ -21,11 +21,11 @@ static bool write_npy(const std::string& path, const std::vector<uint8_t>& data,
     std::fwrite(magic.data(), 1, 6, fp);
     std::fwrite("\x01\x00", 1, 2, fp);
     char header[256];
-    // format เดียวกับ numpy: "{'descr': '|u1', 'fortran_order': False, 'shape': (h, w), }"
+    // same format as numpy: "{'descr': '|u1', 'fortran_order': False, 'shape': (h, w), }"
     int n = std::snprintf(header, sizeof(header),
         "{'descr': '|u1', 'fortran_order': False, 'shape': (%d, %d), }",
         h, w);
-    // header length ต้องเป็นพหุคูณ 64 โดยนับ: magic(6)+ver(2)+len(2)+header+'\n'
+    // header length must be a multiple of 64 counting: magic(6)+ver(2)+len(2)+header+'\n'
     int header_total = 10 + n + 1;
     int pad = (64 - (header_total % 64)) % 64;
     uint16_t hlen_u16 = (uint16_t)(n + 1 + pad);
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 
     std::string out = argv[2];
     if (out.size() >= 4 && out.substr(out.size()-4) == ".npy") {
-    // เขียน .npy ด้วยมือ (สำหรับ debug เท่านั้น)
+    // write .npy by hand (debug only)
     write_npy(out, res.edge, h, w);
     } else {
     cv::Mat em(h, w, CV_8U, (void*)res.edge.data());

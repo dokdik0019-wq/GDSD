@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""verify_cpp_vs_python.py — เทียบ edge maps C++ (PNG) กับ Python (npy) ทั้งชุด
+"""verify_cpp_vs_python.py — compare C++ (PNG) vs Python (npy) edge maps over the full set
 
-ต้อง mismatch = 0 ทุกรูป ถึงจะถือว่า C++ ตรงกับ Python เป๊ะ
+Requires mismatch = 0 on every image for the C++ to count as exactly matching Python
 
-วิธีใช้:
+Usage:
   python src/cpp/verify_cpp_vs_python.py [--py-dir DIR] [--cpp-dir DIR]
-  default: output/edges (Python .npy) และ output_cpp/edges (C++ .png) ข้าง repo
+  default: output/edges (Python .npy) and output_cpp/edges (C++ .png) next to the repo
 """
 import argparse, sys
 from pathlib import Path

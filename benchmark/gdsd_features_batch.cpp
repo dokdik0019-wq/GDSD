@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         const std::vector<double>& d = res.d;
         const std::vector<double>& e = res.e;
 
-        // ZC map (quantized gradient direction + sign change เหมือน detect_edges)
+        // ZC map (quantized gradient direction + sign change, same as detect_edges)
         std::vector<double> nb1(h * w, 0.0), nb2(h * w, 0.0);
         #pragma omp parallel for schedule(static)
         for (int y = 0; y < h; ++y)

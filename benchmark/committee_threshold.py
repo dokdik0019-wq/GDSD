@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 import numpy as np
 
-_BSDS_ROOT = os.environ.get("GDSD_BSDS_ROOT", "/Users/dookdik/gdsd-bsds-mac")
+_BSDS_ROOT = os.environ.get("GDSD_BSDS_ROOT", str(Path.home() / "gdsd-bsds-mac"))
 _PYBSDS = os.environ.get("GDSD_PYBSDS_PATH", "/tmp/py-bsds500")
 sys.path.insert(0, _PYBSDS)
 from bsds.bsds_dataset import BSDSDataset

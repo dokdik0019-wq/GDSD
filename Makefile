@@ -2,7 +2,7 @@
 PYTHON ?= python3
 CXX ?= g++
 CXXFLAGS ?= -O3 -march=native -fopenmp -std=c++17
-# ใช้ pkg-config ถ้ามี opencv4; fallback เป็น -lopencv_core -lopencv_imgcodecs -lopencv_imgproc
+# Use pkg-config when opencv4 is available; fall back to -lopencv_core -lopencv_imgcodecs -lopencv_imgproc
 OPENCV_CFLAGS := $(shell pkg-config --cflags opencv4 2>/dev/null)
 OPENCV_LIBS := $(shell pkg-config --libs opencv4 2>/dev/null || echo "-lopencv_core -lopencv_imgcodecs -lopencv_imgproc")
 

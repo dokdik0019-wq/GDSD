@@ -16,7 +16,7 @@ import cv2
 from multiprocessing import get_context
 
 _BSDS_ROOT = os.environ.get(
-    "GDSD_BSDS_ROOT", "/Users/dookdik/gdsd-bsds-mac"
+    "GDSD_BSDS_ROOT", str(Path.home() / "gdsd-bsds-mac")
 )
 _PYBSDS = os.environ.get("GDSD_PYBSDS_PATH", "/tmp/py-bsds500")
 sys.path.insert(0, _PYBSDS)
@@ -32,7 +32,7 @@ VARIANTS = {
     "v4 hyst s2.8": "png_v4_s28/val",
     "v2+zcnms s2.8": "thin_val_results/png_s28_zcnms/val",
 }
-ROOT = Path("/Users/dookdik/gdsd-bsds-mac")
+ROOT = Path(os.environ.get("GDSD_BSDS_ROOT", str(Path.home() / "gdsd-bsds-mac")))
 N_THR = 99
 THR = np.linspace(1.0 / (N_THR + 1), 1.0 - 1.0 / (N_THR + 1), N_THR)
 

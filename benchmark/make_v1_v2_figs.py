@@ -21,7 +21,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-ROOT = "/home/sc7308/gdsd-bsds"
+ROOT = os.environ.get("GDSD_BSDS_WORK", os.path.expanduser("~/gdsd-bsds"))
 FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "figures")
 os.makedirs(FIG, exist_ok=True)
 
