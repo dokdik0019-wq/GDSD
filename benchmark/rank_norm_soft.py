@@ -16,11 +16,24 @@ from scipy.stats import rankdata
 
 
 def rank_normalize(soft: np.ndarray) -> np.ndarray:
-    """Map pixel values to their within-image percentile rank (0..1].  Flat
-    (zero) regions share the lowest average rank, so they stay suppressed."""
-    n = soft.size
-    r = rankdata(soft.ravel(), method="average")  # 1..n
-    return (r / n).reshape(soft.shape).astype(np.float32)
+    """Map nonzero pixel strengths to their within-image percentile rank;
+    zero pixels stay exactly zero (as in the internal pipeline).
+
+    Rank normalization must NOT give background pixels a nonzero value:
+    ranking zeros together with edge pixels would spread background across
+    the low end of (0,1] and make it fire at low thresholds, destroying
+    precision.  Only the nonzero (candidate) pixels are ranked, then the
+    result is placed back at their locations.
+    """
+    out = np.zeros(soft.shape, dtype=np.float32)
+    flat = soft.ravel()
+    nz = flat > 0
+    n_nz = int(nz.sum())
+    if n_nz == 0:
+        return out
+    r = rankdata(flat[nz], method="average")  # 1..n_nz
+    out.ravel()[nz] = (r / n_nz).astype(np.float32)
+    return out
 
 
 def main():
