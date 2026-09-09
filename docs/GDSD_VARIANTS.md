@@ -25,6 +25,7 @@ percentile-contrast gate) → soft map → official BSDS500 threshold sweep
 | gmnms (Canny-style NMS) | post-process: aggressive ZC thinning | NMS against *any* neighbour (ZC or not) | keep ZC when gm ≥ both normal neighbours | 0.5790 (σ1.4 val) / 0.5870 (σ2.8 val) | ❌ too aggressive at σ2.8 |
 | (reference) Haralick tuned | ρ=2.0, σ=2.8 | fair tuned baseline — the untuned 1984 row is not the comparison to beat | `benchmark/haralick_facet.py` with rho_max/sigma | 0.5976 | reference |
 | **v5 (committee threshold)** | evaluation: per-image threshold from a GT-blind predictor | OIS (0.6318) is higher than ODS (0.6106) → a committee choosing each image's threshold should recover part of that gap (CHEV-style) | linear/bin3 predictor on soft-map stats (mean/p90 gm@ZC), frozen on val | 0.6038 mean-F1 (linear) | ❌ +0.003 only — ceiling is structural |
+| (reference) Haralick oct_zero | Haralick zero rule + GDSD **octant direction** (ρ2.0/σ2.8) | the internal rank-normalized pipeline reports oct_zero as its top scorer (0.6115 test); direction quantization should be ~free per the Rayleigh prediction | `haralick_facet.py direction="octant"` | 0.5962 | reference — ≈ continuous Haralick (0.5976) under official protocol |
 
 ## What each idea was betting on (one line per hypothesis)
 
@@ -60,6 +61,7 @@ percentile-contrast gate) → soft map → official BSDS500 threshold sweep
 | **GDSD v2 σ2.8 + zcnms** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | GDSD v2 σ2.8 (plain) | 0.6070 | 0.6284 | 0.6085 | 6 s |
 | Haralick tuned (ρ2.0/σ2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
+| Haralick oct_zero (octant dir) | 0.5962 | 0.6255 | 0.5488 | ~4 s |
 | GDSD v2 σ1.4 | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | GDSD v1 σ1.4 | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny σ1.4 | 0.5740 | 0.6008 | 0.4866 | 15 s |

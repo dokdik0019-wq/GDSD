@@ -41,6 +41,7 @@ GPU not used), Ubuntu 24.04 — serial loop, single run:
 | **GDSD v2 σ=2.8 + zcnms thinning** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
+| Haralick facet oct_zero (octant dir) | 0.5962 | 0.6255 | 0.5488 | ~4 s |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
@@ -75,6 +76,7 @@ val split (100 images), ODS / OIS / AP:
 | **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
 | **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
 | Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
+| Haralick oct_zero (octant dir) | 0.5776 | 0.6236 | 0.5408 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
 | GDSD v1 (\|R\|@ZC, σ=1.4) | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
@@ -94,7 +96,14 @@ clearly above every baseline on the official benchmark (+0.033 ODS test over
 the untuned Haralick of the 1984 paper, +0.009 over the same Haralick tuned
 on val to ρ=2.0/σ=2.8).  Haralick's sensitivity to ρ/σ is documented in
 [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — the untuned row is not a straw man:
-the tuned row shows the comparison survives fair tuning.
+the tuned row shows the comparison survives fair tuning.  The `oct_zero`
+row (Haralick's analytic zero-crossing rule with GDSD's octant direction
+quantization, ρ=2.0/σ=2.8) is the configuration that scores highest in the
+internal rank-normalized pipeline; under the official protocol used here it
+scores essentially the same as the continuous-direction tuned Haralick
+(0.5962 vs 0.5976 test ODS) — direction quantization is nearly free in both
+protocols, consistent with the Rayleigh prediction.  GDSD v2 σ2.8 + zcnms
+remains the top row under the official protocol.
 
 A full description of the v2 soft map — why `gm@ZC` replaces `|R|@ZC`,
 the doublet diagnosis behind it, and its lineage — is in

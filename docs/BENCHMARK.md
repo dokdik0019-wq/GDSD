@@ -63,6 +63,7 @@ labelled σ is the σ actually applied.
 | **GDSD v2 σ=2.8 + zcnms thinning** | **0.6106** | **0.6318** | **0.6119** | ~6 s |
 | **GDSD v2 (gm@ZC, σ=2.8)** | **0.6070** | **0.6284** | **0.6085** | 6 s |
 | Haralick facet, tuned (ρ=2.0, σ=2.8) | 0.5976 | 0.6218 | 0.5378 | 4 s |
+| Haralick facet oct_zero (octant dir) | 0.5962 | 0.6255 | 0.5488 | ~4 s |
 | GDSD v2 (gm@ZC, σ=1.4) | 0.5913 | 0.6180 | 0.4948 | ~6 s |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5794 | 0.6055 | 0.3530 | ~6 s |
 | Canny (NMS soft map, σ=1.4) | 0.5740 | 0.6008 | 0.4866 | 15 s |
@@ -92,6 +93,7 @@ val split (100 images), for completeness:
 | **GDSD v2 σ=2.8 + zcnms** | **0.5916** | **0.6304** | **0.6032** |
 | **GDSD v2 σ=2.8** | **0.5881** | **0.6269** | **0.5998** |
 | Haralick tuned (ρ=2.0, σ=2.8) | 0.5794 | 0.6199 | 0.5306 |
+| Haralick oct_zero (octant dir) | 0.5776 | 0.6236 | 0.5408 |
 | GDSD v2 σ=1.4 | 0.5724 | 0.6215 | 0.4722 |
 | **GDSD v1 (\|R\|@ZC, σ=1.4)** | 0.5614 | 0.6108 | 0.3459 |
 | Canny | 0.5584 | 0.6044 | 0.4675 |
@@ -160,6 +162,19 @@ Sensitivity is large (≈ +0.08 ODS from the untuned ρ≤1/no-blur row to the
 tuned one), so any comparison against Haralick must state the configuration.
 GDSD v2 at σ=2.8 beats even the tuned Haralick on both splits
 (+0.009 ODS test; +0.009 val).
+
+**Direction quantization (oct_zero).**  `haralick_facet.py` also accepts
+`direction="octant"`: quantize the derivative direction to the nearest of
+8 octants (GDSD-style) before evaluating f''/f'''.  This is the
+configuration that ranks first in the internal rank-normalized pipeline
+(reported there as 0.6115 test ODS).  Under the official protocol used in
+this repo the octant direction scores essentially the same as the
+continuous direction (ρ=2.0/σ=2.8): val 0.5776 vs 0.5794, test 0.5962 vs
+0.5976 — direction quantization is nearly free in both protocols,
+consistent with the Rayleigh prediction (response ≈ convex combination of
+principal curvatures; median φ ≈ 15°, so octant error is negligible).
+GDSD v2 σ2.8 + zcnms remains above both Haralick configurations under the
+official protocol (+0.014 over oct_zero, +0.013 over continuous).
 
 ## Experiment: GDSD v4 (hysteresis) — not better than v2 σ2.8 (2026-09-08)
 

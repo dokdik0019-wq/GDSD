@@ -37,7 +37,8 @@ def make_facet_masks(r=2):
     masks = [pinv[k].reshape(2*r+1, 2*r+1) for k in range(10)]
     return masks
 
-def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0):
+def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
+                  direction="continuous"):
     """Vectorized Haralick facet edge → soft map (strength = gm at edge px).
 
     rho_max: allow the sub-pixel root |rho0| <= rho_max (Haralick 1984 uses
@@ -45,6 +46,14 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0):
         values admit roots in neighbouring pixels and change the candidate
         set — this is the sensitivity parameter noted in the v2 review).
     sigma: optional Gaussian blur (ksize auto-derived) before the facet fit.
+    direction:
+        "continuous" — Haralick 1984: second directional derivative along
+            the *continuous* unit gradient (u,v) = (gx,gy)/|g|.
+        "octant" — quantize the direction to one of the 8 octants first
+            (step = round of the unit gradient, like the GDSD detector),
+            then take f''/f''' along that quantized direction.  This is the
+            ``oct_zero`` configuration (Haralick rule + GDSD octant
+            direction) from the internal 2x2 ablation.
     """
     if sigma > 0.0:
         gray = cv2.GaussianBlur(gray, (0, 0), sigmaX=sigma, sigmaY=sigma,
@@ -66,8 +75,20 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0):
     valid = gm > grad_thr
 
     u = np.zeros_like(gm); v = np.zeros_like(gm)
-    u[valid] = gx[valid] / gm[valid]
-    v[valid] = gy[valid] / gm[valid]
+    if direction == "continuous":
+        u[valid] = gx[valid] / gm[valid]
+        v[valid] = gy[valid] / gm[valid]
+    elif direction == "octant":
+        # quantize to nearest of 8 directions (round of the unit gradient)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sx = np.rint(gx / np.where(gm > 1e-12, gm, 1.0)).astype(int)
+            sy = np.rint(gy / np.where(gm > 1e-12, gm, 1.0)).astype(int)
+        ok = valid & ~((sx == 0) & (sy == 0))
+        nrm = np.hypot(sx, sy)
+        u[ok] = sx[ok] / nrm[ok]
+        v[ok] = sy[ok] / nrm[ok]
+    else:
+        raise ValueError("direction must be 'continuous' or 'octant'")
 
     fpp = 2.0 * (a3 * u*u + a4 * u*v + a5 * v*v)
     fppp = 6.0 * (a6 * u**3 + a7 * u*u*v + a8 * u*v*v + a9 * v**3)
@@ -89,6 +110,7 @@ def main():
     out_dir = Path(sys.argv[2])
     rho_max = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
     sigma = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
+    direction = sys.argv[5] if len(sys.argv) > 5 else "continuous"
     out_dir.mkdir(parents=True, exist_ok=True)
     masks = make_facet_masks(2)
     imgs = sorted(img_dir.glob("*.jpg"))
@@ -97,9 +119,11 @@ def main():
         if img is None:
             print("skip", f); continue
         gray = img.astype(np.float64) / 255.0
-        soft, info = haralick_soft(gray, masks, r=2, rho_max=rho_max, sigma=sigma)
+        soft, info = haralick_soft(gray, masks, r=2, rho_max=rho_max,
+                                   sigma=sigma, direction=direction)
         np.save(out_dir / f"{f.stem}.npy", soft)
-    print(f"done Haralick facet (rho_max={rho_max}, sigma={sigma}): {len(imgs)} images -> {out_dir}")
+    print(f"done Haralick facet (rho_max={rho_max}, sigma={sigma}, "
+          f"dir={direction}): {len(imgs)} images -> {out_dir}")
 
 if __name__ == "__main__":
     main()
