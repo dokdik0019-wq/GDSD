@@ -32,6 +32,7 @@ on the research box (`~/gdsd-bsds/`):
 |---|---|
 | `benchmark/gdsd_features_cli.cpp` | C++ feature extraction (response, gradient, zero-crossing) — output `.f64` files |
 | `benchmark/make_soft.py` | builds the GDSD soft edge map from features (`--strength response` = v1, `gradient_magnitude` = v2) |
+| `benchmark/make_softmaps.py` | builds the classical baseline soft maps (sobel / canny / LoG) at raw scale |
 | `benchmark/make_soft_pngs_u8.py` | converts soft maps to uint8 PNG (×255, clip) — the official `imread/255` convention |
 | `benchmark/run_official_pr.py` | runs the official `pr_evaluation` pipeline (PNG soft maps, global linspace thresholds, interp AP) |
 | `benchmark/bsds_official_eval.py` | *(legacy)* earlier percentile-threshold variant; kept for reference — not the numbers in the tables |
@@ -320,7 +321,7 @@ with the BSDS500 numbers above.
 make build-cpp
 # 2. soft maps (v1 |R|@ZC  OR  v2 gm@ZC) + official PNGs + pr_evaluation
 python benchmark/make_soft.py feats/test soft/gdsd1/test test --strength response
-python benchmark/make_soft_pngs_official.py soft/gdsd1/test soft_png/gdsd1/test
+python benchmark/make_soft_pngs_u8.py soft/gdsd1/test soft_png/gdsd1/test
 GDSD_BSDS_ROOT=. GDSD_PYBSDS_PATH=./py-bsds500 \
   python benchmark/run_official_pr.py gdsd1 test soft_png/gdsd1/test 99
 ```

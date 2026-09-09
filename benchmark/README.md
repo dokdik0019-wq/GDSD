@@ -11,7 +11,8 @@ ground-truth matching, morphological thinning, global thresholds).
 |---|---|
 | `gdsd_features_cli.cpp` | C++ feature extractor (uses `../src/cpp/gdsd_cpp.hpp` core); writes `.response/.d/.e/.zc.f64` per image |
 | `make_soft.py` | Builds the GDSD soft edge map from features (`--strength response` = v1, `gradient_magnitude` = v2) |
-| `make_soft_pngs_official.py` | Normalizes soft maps to 16-bit PNG by **global max** (official [0,1] scale) |
+| `make_softmaps.py` | Builds the classical baseline soft maps (sobel / canny / LoG) at raw scale — **no per-image normalization** |
+| `make_soft_pngs_u8.py` | Converts float soft maps to uint8 PNG (x255, clip) — the official `imread/255` convention |
 | `run_official_pr.py` | Runs the official py-bsds500 `pr_evaluation` pipeline (global linspace thresholds, interp AP) on soft-map PNGs |
 | `bsds_official_eval.py` | *(legacy)* percentile-threshold variant; kept for reference |
 
@@ -43,9 +44,13 @@ done
 python benchmark/make_soft.py feats/test soft/gdsd1/test test --strength response
 python benchmark/make_soft.py feats/test soft/gdsd2/test test --strength gradient_magnitude
 
-# 4. convert to official 16-bit PNGs (normalized by GLOBAL MAX of the method)
-python benchmark/make_soft_pngs_official.py soft/gdsd1/test soft_png/gdsd1/test
-python benchmark/make_soft_pngs_official.py soft/gdsd2/test soft_png/gdsd2/test
+# 4. convert to official uint8 PNGs (raw x255 + clip — NOT global-max normalized;
+#    per-image or global-max rescaling degenerates the fixed [0,1] threshold grid)
+python benchmark/make_soft_pngs_u8.py soft/gdsd1/test soft_png/gdsd1/test
+python benchmark/make_soft_pngs_u8.py soft/gdsd2/test soft_png/gdsd2/test
+
+# (classical baselines instead: make_softmaps.py canny test soft/canny/test
+#  -> then the same make_soft_pngs_u8.py conversion)
 
 # 5. run official pr_evaluation (global linspace thresholds over [0,1], 99 thr)
 GDSD_BSDS_ROOT=. GDSD_PYBSDS_PATH=./py-bsds500 \
@@ -61,8 +66,9 @@ parallelize the `run_official_pr.py` invocations (each uses 10 workers).
 The reported numbers use the **official BSDS evaluation pipeline**
 (py-bsds500 `pr_evaluation`), which mirrors the MATLAB suite:
 
-- soft maps stored as 16-bit PNG, normalized by each method's own global
-  maximum across the split (so all methods share the [0,1] scale);
+- soft maps stored as **uint8 PNG** with raw x255 + clip (the official
+  `imread()/255` convention); heavy-tailed maps that exceed [0,1] natively
+  (ELSE) use per-image max instead — see `docs/ELSE_BENCHMARK.md`;
 - a **fixed global threshold grid** `linspace(1/(N+1), 1-1/(N+1), N)` over
   [0,1] — not per-method percentiles;
 - ODS = best F1 from counts accumulated over all images at the shared grid;

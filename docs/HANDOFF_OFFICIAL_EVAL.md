@@ -1,3 +1,10 @@
+> [!WARNING]
+> **OBSOLETE (2026-09-09).**  Historical session notes from the 2026-09-07
+> eval rerun.  The tables here carry PRE-`ca2ad97` numbers (e.g. gdsd_v1fix
+> test 0.5743) that were later superseded (v1 post-fix = 0.5794).  Do NOT
+> quote from this file.  The live numbers of record are in `docs/BENCHMARK.md`;
+> reproduction steps in `REPRODUCE.md`.  Kept only as a process record.
+
 # GDSD official pr_eval (uint8) — HANDOFF for resume after Mac closed
 
 Status: 2026-09-07 ~20:15 ICT — job RUNNING on box sc7308 (systemd user unit).
