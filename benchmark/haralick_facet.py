@@ -38,7 +38,7 @@ def make_facet_masks(r=2):
     return masks
 
 def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
-                  direction="continuous"):
+                  direction="continuous", thinning="none"):
     """Vectorized Haralick facet edge → soft map (strength = gm at edge px).
 
     rho_max: allow the sub-pixel root |rho0| <= rho_max (Haralick 1984 uses
@@ -54,6 +54,13 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
             then take f''/f''' along that quantized direction.  This is the
             ``oct_zero`` configuration (Haralick rule + GDSD octant
             direction) from the internal 2x2 ablation.
+    thinning:
+        "none" — keep every Haralick edge pixel (the raw 1984 rule).
+        "zc_nms" — suppress an edge pixel when an *edge* neighbour along
+            the gradient normal has strictly higher gm.  This is the same
+            candidate-only NMS as GDSD's ``zcnms`` thinning, applied to the
+            Haralick analytic-rule edge set — used to check whether that
+            thinning is a generic gain or specific to GDSD's doublet.
     """
     if sigma > 0.0:
         gray = cv2.GaussianBlur(gray, (0, 0), sigmaX=sigma, sigmaY=sigma,
@@ -100,6 +107,28 @@ def haralick_soft(gray, masks, r=2, grad_thr=1e-3, rho_max=1.0, sigma=0.0,
         rho0[denom] = -fpp[denom] / fppp[denom]
 
     edge = valid & (fpp > 0) & (fppp < 0) & (np.abs(rho0) <= rho_max)
+    if thinning == "zc_nms":
+        # candidate-only NMS along the gradient normal (same rule as GDSD
+        # zcnms): suppress an edge pixel if an *edge* neighbour in the
+        # +-(u,v) direction has strictly higher gm.
+        h2, w2 = edge.shape
+        # nearest of 8 directions from the unit normal (u,v)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            mag = np.hypot(u, v)
+            sx = np.rint(u / np.where(mag > 1e-12, mag, 1.0)).astype(int)
+            sy = np.rint(v / np.where(mag > 1e-12, mag, 1.0)).astype(int)
+        yy = np.arange(h2)[:, None]
+        xx = np.arange(w2)[None, :]
+        n1y = np.clip(yy + sy, 0, h2 - 1)
+        n1x = np.clip(xx + sx, 0, w2 - 1)
+        n2y = np.clip(yy - sy, 0, h2 - 1)
+        n2x = np.clip(xx - sx, 0, w2 - 1)
+        e1 = edge[n1y, n1x]
+        e2 = edge[n2y, n2x]
+        keep = edge.copy()
+        keep &= ~(e1 & (gm[n1y, n1x] > gm))
+        keep &= ~(e2 & (gm[n2y, n2x] > gm))
+        edge = keep
     # Haralick: edge strength = |gradient| (soft map คล้าย GDSD2)
     strength = np.where(edge, gm, 0.0).astype(np.float32)
     return strength, {"edge_px": int(edge.sum()), "fpp_pos": int((fpp > 0).sum()),
@@ -111,6 +140,7 @@ def main():
     rho_max = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
     sigma = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
     direction = sys.argv[5] if len(sys.argv) > 5 else "continuous"
+    thinning = sys.argv[6] if len(sys.argv) > 6 else "none"
     out_dir.mkdir(parents=True, exist_ok=True)
     masks = make_facet_masks(2)
     imgs = sorted(img_dir.glob("*.jpg"))
@@ -120,10 +150,11 @@ def main():
             print("skip", f); continue
         gray = img.astype(np.float64) / 255.0
         soft, info = haralick_soft(gray, masks, r=2, rho_max=rho_max,
-                                   sigma=sigma, direction=direction)
+                                   sigma=sigma, direction=direction,
+                                   thinning=thinning)
         np.save(out_dir / f"{f.stem}.npy", soft)
     print(f"done Haralick facet (rho_max={rho_max}, sigma={sigma}, "
-          f"dir={direction}): {len(imgs)} images -> {out_dir}")
+          f"dir={direction}, thin={thinning}): {len(imgs)} images -> {out_dir}")
 
 if __name__ == "__main__":
     main()
