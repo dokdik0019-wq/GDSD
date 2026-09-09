@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 import numpy as np
 import cv2
+from multiprocessing import get_context
 
 _BSDS_ROOT = os.environ.get(
     "GDSD_BSDS_ROOT", "/Users/dookdik/gdsd-bsds-mac"
@@ -44,8 +45,29 @@ def load_pred(png_dir, sid):
     return pred
 
 
+# ---- parallel worker state (fork) ----
+_DS = None
+_PNG_DIR = None
+
+
+def _accum_one(nm):
+    sid = Path(nm).name
+    pred = load_pred(_PNG_DIR, sid)
+    gt = _DS.boundaries(nm)
+    tgt = gt[0].shape
+    if pred.shape != tgt:
+        pred = pred[: tgt[0], : tgt[1]]
+        pred = np.pad(pred, [(0, tgt[0] - pred.shape[0]), (0, tgt[1] - pred.shape[1])], mode="constant")
+    cr, sr, cp, sp, _ = evaluate_boundaries.evaluate_boundaries(
+        pred, gt, thresholds=THR, apply_thinning=True)
+    rec, prec, f1 = evaluate_boundaries.compute_rec_prec_f1(cr, sr, cp, sp)
+    return cr, sr, cp, sp, float(f1.max())
+
+
 def main():
+    global _DS, _PNG_DIR
     ds = BSDSDataset(_BSDS_ROOT)
+    _DS = ds
     names = list(ds.val_sample_names)   # e.g. "val/65033"
     os.makedirs("viz_out", exist_ok=True)
     os.makedirs("viz_out/png", exist_ok=True)
@@ -58,33 +80,24 @@ def main():
         if n_ok < 100:
             print(f"[skip] {label}: only {n_ok}/100 pngs at {png_dir_p}")
             continue
-        cr = np.zeros(N_THR); sr = np.zeros(N_THR)
-        cp = np.zeros(N_THR); sp = np.zeros(N_THR)
-        per_img_best = []
-        for nm in names:
-            sid = Path(nm).name
-            pred = load_pred(png_dir_p, sid)
-            gt = ds.boundaries(nm)
-            # match sizes (mirror run_official_pr)
-            tgt = gt[0].shape
-            if pred.shape != tgt:
-                pred = pred[: tgt[0], : tgt[1]]
-                pred = np.pad(pred, [(0, tgt[0] - pred.shape[0]), (0, tgt[1] - pred.shape[1])], mode="constant")
-            c_r, s_r, c_p, s_p, _ = evaluate_boundaries.evaluate_boundaries(
-                pred, gt, thresholds=THR, apply_thinning=True)
-            cr += c_r; sr += s_r; cp += c_p; sp += s_p
-            rec_i, prec_i, f1_i = evaluate_boundaries.compute_rec_prec_f1(c_r, s_r, c_p, s_p)
-            per_img_best.append(f1_i.max())
+        _PNG_DIR = png_dir_p
+        with get_context("fork").Pool(processes=10) as pool:
+            parts = pool.map(_accum_one, names)
+        cr = sum(p[0] for p in parts)
+        sr = sum(p[1] for p in parts)
+        cp = sum(p[2] for p in parts)
+        sp = sum(p[3] for p in parts)
+        per_img_best = np.array([p[4] for p in parts])
         rec, prec, f1 = evaluate_boundaries.compute_rec_prec_f1(cr, sr, cp, sp)
         bi = int(np.argmax(f1))
-        ods, ois = float(f1[bi]), float(np.mean(per_img_best))
+        ods, ois = float(f1[bi]), float(per_img_best.mean())
         rec_u, ndx = np.unique(rec, return_index=True)
         prec_u = prec[ndx]
         prec_i = np.interp(np.arange(0, 1, 0.01), rec_u, prec_u, left=0.0, right=0.0)
         ap = float(prec_i.sum() * 0.01)
         summary.append((label, ods, ois, ap, float(THR[bi]), float(rec[bi]), float(prec[bi])))
         curves[label] = (rec, prec)
-        print(f"{label:18s} ODS={ods:.4f} OIS={ois:.4f} AP={ap:.4f} @thr {THR[bi]:.3f}")
+        print(f"{label:18s} ODS={ods:.4f} OIS={ois:.4f} AP={ap:.4f} @thr {THR[bi]:.3f}", flush=True)
 
     with open("viz_out/variant_summary.csv", "w", newline="") as f:
         w = csv.writer(f)

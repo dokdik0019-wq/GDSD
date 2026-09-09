@@ -101,6 +101,22 @@ corroborates: "if oracle OIS−ODS < 0.03, stop; achievable < 0.006".
 **Rejected** — effort goes into soft-map ranking (local/spatial
 adaptation such as zcnms), not per-image scalars.
 
+## Visualizations (transparency artifacts)
+
+All figures were produced by `benchmark/make_variants_viz.py` — an
+independent re-evaluation with the official py-bsds500 matcher over the
+val split (100 images, 99 global thresholds).  Every ODS/OIS/AP in the
+CSV matches the benchmark tables in this repo exactly, which is the
+consistency check that the reported numbers are reproducible rather than
+hand-picked.
+
+| Figure | What it shows |
+|---|---|
+| [`figures/pr_curves.png`](figures/pr_curves.png) | precision-recall curves of all 7 variants (v1, v2 σ1.4/σ2.8, v3 WLS, v4 σ1.4/σ2.8, v2+zcnms σ2.8) on val |
+| [`figures/edge_overlay_101085.png`](figures/edge_overlay_101085.png) | example image: red = each variant's edges at its own ODS threshold, green = human ground truth |
+| [`figures/edge_overlay_101087.png`](figures/edge_overlay_101087.png) | second example image, same layout |
+| [`figures/variant_summary.csv`](figures/variant_summary.csv) | per-variant ODS/OIS/AP/best-thr/R/P (cross-check against tables above) |
+
 ## Methodology rules that shaped this line
 
 - **One change per variant** — the base pipeline is shared, so a result
